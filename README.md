@@ -1,5 +1,7 @@
 # MGT Unicorn Suite
 
+[![download](https://img.shields.io/badge/download-v0.2.0--beta-blue)](https://github.com/greektimes/suite/releases) [![license](https://img.shields.io/badge/license-AGPL--3.0-blue)](https://github.com/greektimes/suite/blob/main/COPYING)
+
 The official Windows app of The Montreal Greek Times
 (greektimes.ca).
 
