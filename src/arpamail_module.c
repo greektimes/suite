@@ -28,7 +28,7 @@
  *
  * OPEN POSTURE: RFC 765 allows mail to be entered before any USER or
  * PASS, and the live server takes that path: no login is required. The
- * client does not send USER or PASS. The prior fixed login credential is
+ * client does not send USER or PASS. The prior NETML credential is
  * dropped; the server still accepts it but grants no UI-visible
  * elevation, so it serves no functional purpose here.
  *
