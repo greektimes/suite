@@ -1,0 +1,69 @@
+This file is the verbatim CNIDR 1993 license that governs the freeWAIS-sf
+protocol source code preserved in this repository. It is reproduced here
+exactly as it appears in `doc/CNIDR/COPYRIGHT` in the upstream
+freeWAIS-sf 2.2.14 source tarball, dated June 7, 2000, available from
+the Finnish university and research network mirror at:
+
+    https://www.nic.funet.fi/index/files/index/networking/services/freeWAIS/freeWAIS-sf/
+
+This license applies to the 40 freeWAIS-sf protocol source files in
+source/src/ that are preserved byte-for-byte from the upstream release.
+It does NOT apply to the Windows port code authored for the Greek Times
+WAIS Search project (Win32 GUI, Winsock layer, CLI engine, build script,
+documentation), which is licensed separately under BSD 3-Clause; see the
+LICENSE file in the repository root.
+
+The CNIDR 1993 license is a permissive license authored by Jane Smith for
+the Center for Networked Information Discovery and Retrieval (CNIDR) at
+MCNC in North Carolina, dated October 1, 1993. It has covered every
+freeWAIS and freeWAIS-sf release continuously from version 0.2 in 1993
+through version 2.2.14 in June 2000, the final release of the
+Pfeifer/Govert lineage at Universitaet Dortmund. CNIDR and MCNC are no
+longer operating, but the license they wrote remains in force on the
+preserved source code.
+
+The full text of the license follows. Below the line is unchanged from
+the upstream COPYRIGHT file, including the original 1993 typography.
+
+================================================================================
+
+Title: COPYRIGHT freeWAIS-0.2
+Author: Jane Smith 
+Copyright: Copyright 1993 CNIDR 
+Last update: 10.01.93 
+Abstract: This file contains the copyright statement for freeWAIS 0.2
+
+Copyright Statement for freeWAIS 0.2 and subsquent freeWAIS
+releases:
+
+Copyright (c) MCNC, Clearinghouse for Networked Information Discovery
+and Retrieval, 1993. 
+
+Permission to use, copy, modify, distribute, and sell this software
+and its documentation, in whole or in part, for any purpose is hereby
+granted without fee, provided that
+
+1. The above copyright notice and this permission notice appear in all
+copies of the software and related documentation. Notices of copyright
+and/or attribution which appear at the beginning of any file included
+in this distribution must remain intact.
+
+2. Users of this software agree to make their best efforts (a) to
+return to MCNC any improvements or extensions that they make, so that
+these may be included in future releases; and (b) to inform MCNC/CNIDR
+of noteworthy uses of this software.
+
+3. The names of MCNC and Clearinghouse for Networked Information
+Discovery and Retrieval may not be used in any advertising or publicity
+relating to the software without the specific, prior written permission
+of MCNC/CNIDR. 
+
+THE SOFTWARE IS PROVIDED "AS-IS" AND WITHOUT WARRANTY OF ANY KIND,
+EXPRESS, IMPLIED OR OTHERWISE, INCLUDING WITHOUT LIMITATION, ANY
+WARRANTY OF MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.
+
+IN NO EVENT SHALL MCNC/CNIDR BE LIABLE FOR ANY SPECIAL, INCIDENTAL,
+INDIRECT OR CONSEQUENTIAL DAMAGES OF ANY KIND, OR ANY DAMAGES WHATSOEVER
+RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER OR NOT ADVISED OF
+THE POSSIBILITY OF DAMAGE, AND ON ANY THEORY OF LIABILITY, ARISING OUT
+OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.

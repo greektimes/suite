@@ -1,0 +1,125 @@
+PATCHES.txt - libwww 5.4.1 (GitHub tag, 2017-01-04 Jose Kahan retag)
+======================================================================
+
+Tracking every deviation between src/libwww/ and the pristine upstream
+tarball at https://github.com/w3c/libwww/archive/refs/tags/5.4.1.tar.gz
+(SHA-256 1c63b7df91059db46ae0f8926b84efd38ea6c181ef35a85ae231453e605388e9).
+
+Layout note: pristine sources live in libwww-5.4.1/Library/src/ inside
+the tarball. The on-disk tree at src/libwww/ is that subdirectory plus
+its own windows/ and vms/ children, with the additions noted below.
+
+Per BLUEPRINT 7.3 and the Phase 4 hard rule: minimal reversible changes
+only, every hand-edit logged here with file + original line + new line
++ one-line reason. Auto-generated build artifacts and tarball-internal
+file copies are listed for completeness in the second and third blocks.
+
+----------------------------------------------------------------------
+BLOCK A: HAND-EDITED SOURCE FILES
+----------------------------------------------------------------------
+
+File:   windows/config.h
+Reason: Disable four optional libwww features whose dependencies the
+        Suite does not link. Each block is a 1-to-3-line replacement;
+        no functional code touched, only the autoconf flag.
+
+  ORIGINAL (line 80):
+      #define HT_EXPAT 1
+  NEW (lines 80-82):
+      /* MGT Unicorn Suite: disabled - we hand-roll a tiny CDF parser per
+         BLUEPRINT 6.5, no expat dependency. */
+      /* #undef HT_EXPAT */
+
+  ORIGINAL (line 83):
+      #define HT_ZLIB 1
+  NEW (lines 85-87):
+      /* MGT Unicorn Suite: disabled - HTTP works fine without gzip,
+         servers will negotiate identity encoding. */
+      /* #undef HT_ZLIB */
+
+  ORIGINAL (line 86):
+      #define HT_MD5 1
+  NEW (lines 90-92):
+      /* MGT Unicorn Suite: disabled - Basic auth is enough for retro web,
+         avoids the MD5 dependency. */
+      /* #undef HT_MD5 */
+
+  ORIGINAL (line 89):
+      #define HT_POSIX_REGEX 1
+  NEW (lines 95-97):
+      /* MGT Unicorn Suite: disabled - libwww uses regex only for advanced
+         rule files, which we don't ship. */
+      /* #undef HT_POSIX_REGEX */
+
+
+File:   COPYRIGH
+Reason: Library/src/COPYRIGH ships the 1994 CERN formulation; the
+        modern W3C 2003 formulation lives at libwww-5.4.1/COPYRIGH in
+        the tarball root. Copy the root file into src/libwww/ so the
+        in-tree notice matches what we cite in CREDITS.txt and About.
+        Byte-identical to libwww-5.4.1/COPYRIGH (1648 bytes).
+
+  ORIGINAL: Library/src/COPYRIGH, 2006 bytes, starts:
+      "                                                            COPYRIGHT STATEMENT"
+  NEW:      libwww-5.4.1/COPYRIGH (project root), 1648 bytes, starts:
+      "                                                        libwww Copyright Notice"
+
+
+----------------------------------------------------------------------
+BLOCK B: REGENERATED BUILD ARTIFACTS (not hand-edits)
+----------------------------------------------------------------------
+
+These differ from pristine because winConfigure.pl + makedefs.pl ran
+locally to materialize the headers and DLL export files from their
+literate-source siblings (the .html files in src/libwww/). No .html
+input was modified. To reproduce the same outputs, re-run:
+
+    perl src/libwww/config/winConfigure.pl src/libwww/   (headers)
+    perl src/libwww/windows/makedefs.pl ... > *.def      (export defs)
+
+Regenerated headers (30 files):
+  HTAccess.h  HTAlert.h    HTAnchor.h   HTAtom.h     HTBTree.h
+  HTChunk.h   HTFTP.h      HTFile.h     HTFormat.h   HTGopher.h
+  HTInit.h    HTList.h     HTMIME.h     HTML.h       HTMLGen.h
+  HTNews.h    HTParse.h    HTPlain.h    HTRules.h    HTString.h
+  HTStyle.h   HTTCP.h      HTTP.h       HTTeXGen.h   HTTelnet.h
+  HTUtils.h   HTWriter.h   HText.h      SGML.h
+
+Regenerated DLL export definition (irrelevant to our static build,
+listed for completeness):
+  windows/wwwinit.def
+
+
+----------------------------------------------------------------------
+BLOCK C: FILES COPIED FROM ELSEWHERE IN THE TARBALL
+----------------------------------------------------------------------
+
+File:   md5.c, md5.h
+Source: libwww-5.4.1/modules/md5/md5.c, md5.h (byte-identical copies)
+Reason: HTDigest.c references md5 symbols even with HT_MD5 undefined
+        in windows/config.h. Bundle the md5 implementation directly
+        next to the libwww sources so build_x64.bat can compile it
+        as one more FILES_LWWW_UTILS member.
+
+Files:  153 generated headers and DLL .def files materialized by
+        winConfigure.pl + makedefs.pl. Filenames follow the patterns
+        HT*.h, WWW*.h, wwwsys.h, www*.def. These sit alongside the .c
+        files because that is the include path the build uses; pristine
+        ships only the .html literate sources and expects the build
+        system to generate the .h/.def files on the fly.
+
+
+----------------------------------------------------------------------
+WHAT IS UNCHANGED
+----------------------------------------------------------------------
+
+- All .c source files in src/libwww/ are byte-identical to pristine.
+  No GCC 15 K&R fixes, no implicit-int fixes, no deprecated-attribute
+  fixes were needed; build_x64.bat's CFLAGS_LIBWWW group handles every
+  legacy-syntax issue via -std=gnu89 -fcommon -fpermissive plus a small
+  family of -Wno-* suppressions, with no source-level patching.
+
+- All .html literate sources are byte-identical to pristine.
+
+- The HTBound.c security fix (W3C 2005 maintenance release) is already
+  present in the GitHub 5.4.1 tag and required no further patching.

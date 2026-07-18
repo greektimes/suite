@@ -1,0 +1,73 @@
+/*
+ * suite.rc - Application icon, embedded fonts, and version info.
+ *
+ * Part of the Montreal Greek Times Unicorn Suite v0.1.0-mvp.
+ * The icon resource (ID 1) is loaded by suite_shell.c via MAKEINTRESOURCE(1).
+ * Numeric IDs for the embedded font blobs are in suite_res.h.
+ */
+
+#include <winver.h>
+#include "suite_res.h"
+
+/* Application icon (ID 1, loaded via MAKEINTRESOURCE(1)). Multi-resolution
+ * .ico (16/32/48/64/128/256) generated from the generic CHWB logo with
+ * ImageMagick + Lanczos resampling -- see docs/2026-06-27_LOGO_ASSETS.md
+ * for the exact regeneration command. Stored under assets/ at the repo
+ * root; windres resolves the path relative to this .rc file in src/. */
+1 ICON "../assets/mgt_suite.ico"
+
+/* Ubuntu Mono Regular and Bold, embedded as RCDATA. Loaded at startup
+ * by suite_fonts_init via AddFontMemResourceEx, which makes them
+ * process-private without writing to %WINDIR%\Fonts. Distributed under
+ * the Ubuntu Font Licence 1.0 (see src/fonts/COPYING.UbuntuFontLicense.txt). */
+100 RCDATA "fonts/UbuntuMono-Regular.ttf"
+101 RCDATA "fonts/UbuntuMono-Bold.ttf"
+
+/* Modern-mode logos, embedded as-is (original transparent PNGs, alpha
+ * intact -- NOT rasterized to BMP). Decoded at runtime by suite_logo.c
+ * via GDI+ and drawn high-quality bicubic on the Live Radio / Live TV
+ * splash panes. Exact provided filenames are preserved (spaces legal in
+ * RC string literals); paths are relative to this .rc file in src/. */
+200 RCDATA "../logos/montreal radio.png"
+201 RCDATA "../logos/montreal greek tv.png"
+
+/* Unicorn Desktop (F1) channel-bar icons, embedded as-is (32x32 PNGs,
+ * resized from the full-size originals with ImageMagick + Lanczos).
+ * Decoded at runtime by suite_logo.c via GDI+ and blitted into each
+ * channel row's 32x32 icon placeholder by activedesktop_module.c, which
+ * maps CDF channel items to these IDs by title. Paths are relative to
+ * this .rc file in src/. */
+300 RCDATA "../icons/news.png"
+301 RCDATA "../icons/weather.png"
+302 RCDATA "../icons/kairos.png"
+303 RCDATA "../icons/eisiseis.png"
+304 RCDATA "../icons/home-page.png"
+305 RCDATA "../icons/news-ticker.png"
+306 RCDATA "../icons/Live-radio.png"
+
+1 VERSIONINFO
+FILEVERSION    0, 2, 0, 0
+PRODUCTVERSION 0, 2, 0, 0
+FILEOS         VOS__WINDOWS32
+FILETYPE       VFT_APP
+FILESUBTYPE    0
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040904b0"
+        BEGIN
+            VALUE "CompanyName",      "The Montreal Greek Times"
+            VALUE "FileDescription",  "Montreal Greek Times Unicorn Suite"
+            VALUE "FileVersion",      "0.2.0-beta"
+            VALUE "InternalName",     "MGT_Unicorn_Suite"
+            VALUE "LegalCopyright",   "Copyright (C) 2026 Dimitri Papadopoulos"
+            VALUE "OriginalFilename", "MGT_Unicorn_Suite_x64.exe"
+            VALUE "ProductName",      "MGT Unicorn Suite"
+            VALUE "ProductVersion",   "0.2.0-beta"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x0409, 1200
+    END
+END
