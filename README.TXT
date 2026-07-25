@@ -44,6 +44,11 @@ The complete Corresponding Source for this exact build is at
 
 Build it with build_x64.bat under MSYS2 UCRT64.
 
+CREDITS
+
+CREDITS.TXT names the people whose protocols this app speaks, and
+carries the dedication.
+
 CONTACT
 
 The Montreal Greek Times
