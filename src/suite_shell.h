@@ -16,7 +16,7 @@
 #endif
 #include <windows.h>
 
-#define SUITE_VERSION_STRING "v0.3.0-beta"
+#define SUITE_VERSION_STRING "v0.3.1-beta"
 #define SUITE_APP_TITLE      "Montreal Greek Times Unicorn Suite"
 
 /* Module descriptor: one row per protocol module. See BLUEPRINT section 3.3.

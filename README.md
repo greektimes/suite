@@ -1,74 +1,116 @@
 # MGT Unicorn Suite
 
-[![download](https://img.shields.io/badge/download-v0.3.0--beta-blue)](https://github.com/greektimes/suite/releases) [![license](https://img.shields.io/badge/license-AGPL--3.0-blue)](https://github.com/greektimes/suite/blob/main/COPYING)
+The official Windows app of The Montreal Greek Times. Watch Montreal Greek
+Television live, listen to Montreal Greek Radio, read the newspaper, and follow
+the news of the Greek community of Greater Montreal.
 
-The official Windows app of The Montreal Greek Times
-(greektimes.ca).
+[![download](https://img.shields.io/badge/download-v0.3.1--beta-blue)](https://github.com/greektimes/suite/releases)
+[![license](https://img.shields.io/badge/license-AGPL--3.0-blue)](https://github.com/greektimes/suite/blob/main/COPYING)
 
-- Watch **Montreal Greek TV** live
-- Listen to **Montreal Greek Radio** live
-- Read the print replica of **The Montreal Greek Times**
-  newspaper in a page-flip reader
-- Follow real-time news from the Greek community of
-  Greater Montreal
+---
 
-## Retro Mode
+## Status
 
-For vintage internet enthusiasts, the app also includes a
-Retro Mode: a text-first client for the live retro access
-points of the MGT Unicorn server:
-- Unicorn Desktop (Active Channel CDF over HTTP, retro.greektimes.ca)
-- Retro Web Browser (HTTP and HTML via W3C libwww, home page retro.greektimes.ca)
-- Gopher (RFC 1436, gopher.greektimes.ca)
-- ARPANET FTP-Mail (RFC 765/691 mail over FTP, arpanet.greektimes.ca port 2121)
-- WAIS Search (Z39.50-1988 via freeWAIS-sf, wais.greektimes.ca port 210)
-- Archie (Prospero/ARDP file search, archie.greektimes.ca port 1525; interactive telnet on port 2323)
-- IRC (IRCv3 read-only view of #retro, irc.greektimes.ca port 6667)
-- CU-SeeMe Live TV (CU-SeeMe over UDP, cu-seeme.greektv.ca port 7648)
-- Terminal (Telnet RFC 854 with VT220 emulation, plus Finger RFC 1288 and QOTD RFC 865 shortcuts, telnet/finger/qotd.greektimes.ca)
+**v0.3.1-beta**, 25 July 2026. Beta: usable, and still changing.
+
+---
+
+## What it does
+
+Four things, on four tabs:
+
+- **Live TV** streams Montreal Greek Television.
+- **Live Radio** streams Montreal Greek Radio.
+- **Newspaper** opens the print edition of The Montreal Greek Times in a
+  page-turning reader, with back issues.
+- **Website** opens greektimes.ca inside the app.
+
+---
+
+## Download
+
+| where | link |
+| --- | --- |
+| GitHub | https://github.com/greektimes/suite/releases |
+| Web | https://greektimes.ca/wp-content/uploads/2026/07/MGTSUITE.zip |
+| FTP | ftp://ftp.greektimes.ca/pub/suite/MGTSUITE.ZIP |
+| Gopher | gopher://gopher.greektimes.ca/1/software |
+
+Unzip anywhere. Keep `WebView2Loader.dll` next to `MGT_Unicorn_Suite_x64.exe`
+and run the executable. There is no installer.
+
+---
 
 ## Requirements
 
-Windows 11 (also runs on Windows 10 22H2 or later). Modern Mode
-requires the Microsoft WebView2 Runtime, which ships in-box on
-Windows 11; on Windows 10 install the WebView2 Evergreen
-Bootstrapper before first launch.
+- Windows 11. It also runs on Windows 10, version 22H2 or later.
+- The Microsoft WebView2 Runtime, used by the Newspaper reader, the Website tab
+  and the browser. Windows 11 already has it. On Windows 10, install the
+  [Evergreen Bootstrapper](https://developer.microsoft.com/microsoft-edge/webview2/)
+  before the first launch.
 
-## Building
+---
 
-Native Win32 C, no framework. Built with MSYS2 UCRT64
-GCC on x64. From the repository root:
+## Retro Mode
 
-    build_x64.bat
+The switch at the top of the window turns the app into a 1990s internet client.
+This part is for readers curious about how the internet worked before the web
+took over. It is not needed to watch television or read the paper.
 
-The build produces MGT_Unicorn_Suite_x64.exe.
-WebView2Loader.dll must sit beside the executable at runtime.
+Each tab speaks to a live server run by the MGT Unicorn project, answering the
+real protocol rather than imitating it.
 
-## Downloads
+| tab | protocol | default server |
+| --- | --- | --- |
+| Unicorn Desktop | Active Channel style desktop | greektimes.ca |
+| Retro Web Browser | HTTP, W3C libwww 5.4.1 | http://retro.greektimes.ca/ |
+| Gopher | RFC 1436 | gopher.greektimes.ca:70 |
+| ARPANET FTP-Mail | RFC 765 and RFC 691 | arpanet.greektimes.ca:2121, INFO@GREEKTIMES |
+| WAIS | Z39.50-1988, freeWAIS-sf | wais.greektimes.ca:210, database `greektimes` |
+| Archie | Prospero ARDP over UDP | archie.greektimes.ca:1525, telnet on 2323 |
+| IRC | RFC 1459, read-only view | irc.greektimes.ca:6667, channel `#retro` |
+| CU-SeeMe Live TV | Cornell CU-SeeMe over UDP | cu-seeme.greektv.ca:7648 |
+| Terminal | Telnet VT220, with Finger and QOTD | telnet.greektimes.ca |
 
-Prebuilt binaries are published on the Releases page and on
-ftp://ftp.greektimes.ca/pub/suite/MGTSUITE.ZIP
+---
+
+## Build
+
+MSYS2 UCRT64, GCC. From the project root:
+
+```
+build_x64.bat
+```
+
+---
 
 ## License
 
-Copyright (C) 2026 Dimitri Papadopoulos and
-The Montreal Greek Times.
+Free software under the **GNU Affero General Public License, version 3 or
+later**. See [COPYING](COPYING).
 
-The MGT Unicorn Suite is free software, released under the
-GNU Affero General Public License v3.0 or later. See COPYING.
+Third-party components keep their own licences, listed in
+[THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md) and the `licenses/`
+directory.
 
-The Suite embeds and links third-party open source components,
-including freeWAIS-sf 2.2.14 (CNIDR 1993 license), W3C libwww
-5.4.1 (W3C Software Notice), the FFmpeg TrueSpeech decoder
-(LGPL 2.1 or later), minimp3 (CC0), the Ubuntu Font (Ubuntu
-Font Licence 1.0) and the Microsoft WebView2 SDK. Full
-attribution and license texts: THIRD-PARTY-NOTICES.md and
-the licenses/ directory.
+---
 
-The Newspaper tab consumes an Internet Archive BookReader
-(AGPLv3) instance hosted by The Montreal Greek Times; its
-source is at github.com/internetarchive/bookreader
+## Credits
 
-## See also
+The protocol authors and the projects this is built on are named in
+[CREDITS.md](CREDITS.md).
 
-The standalone WAIS client: github.com/greektimes/wais
+---
+
+Dedicated to the memory of
+
+Basile Papadopoulos
+and
+Despina Kavalou-Papadopoulos
+
+---
+
+## Contact
+
+The Montreal Greek Times
+https://www.greektimes.ca

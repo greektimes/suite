@@ -88,6 +88,11 @@ typedef struct {
     archie_hit_t   *hits;          /* malloc'd array, hit_count entries   */
     int             hit_count;
     int             none_found;    /* 1 if the server returned NONE-FOUND */
+    char            warning[256];  /* first WARNING line, minus the keyword;
+                                    * empty when the server sent none. A
+                                    * warning is not an error and does not
+                                    * suppress hits, but discarding it
+                                    * silently is its own small defect. */
 } archie_result_t;
 
 /* Blocking Archie MATCH query. Intended to be called off the UI thread.

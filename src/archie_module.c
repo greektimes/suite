@@ -420,10 +420,28 @@ static void CALLBACK archie_query_timer_proc(HWND hwnd, UINT msg,
     archie_apply_result();
 
     if (ctx->result.status == ARCHIE_OK) {
-        if (ctx->result.hit_count > 0)
+        /* A server WARNING is not an error and must not suppress the hits,
+         * but discarding it silently is its own small defect: the v1 reply
+         * path ends a broad search with "WARNING OUT-OF-DATE ..." to say it
+         * withheld a record, and before 0.3.1-beta we dropped that on the
+         * floor. Announcing VERSION 5 means it should no longer arrive; if
+         * it does, something has fallen back to v1 and the user should see
+         * it rather than silently receive a short answer. */
+        char line[512];
+        if (ctx->result.warning[0]) {
+            if (ctx->result.hit_count > 0)
+                _snprintf(line, sizeof line, "%s  [server warning: %s]",
+                          ctx->result.message, ctx->result.warning);
+            else
+                _snprintf(line, sizeof line, "No matches.  [server warning: %s]",
+                          ctx->result.warning);
+            line[sizeof line - 1] = '\0';
+            archie_status(line);
+        } else if (ctx->result.hit_count > 0) {
             archie_status(ctx->result.message);
-        else
+        } else {
             archie_status("No matches.");
+        }
     } else {
         archie_status(ctx->result.message[0] ? ctx->result.message
                                              : "Archie query failed.");

@@ -48,12 +48,38 @@
 #include <stdlib.h>
 #include <string.h>
 
-/* Fixed request Connection ID. For a VERSION 1 client the server forces
- * the reply CID to 0 regardless of this value, and each archie_query uses
- * a fresh socket (fresh ephemeral source port), so the (CID,addr,port)
- * tuple is unique per query and a fixed value is safe. Retransmits within
- * one query intentionally reuse it (that is the duplicate-resend path). */
-#define ARCHIE_REQ_CID 0x4D47u   /* 'M','G' */
+/* Request Connection ID, fresh per query.
+ *
+ * This used to be a fixed 0x4D47 ('M','G'). That was safe for us, because a
+ * VERSION 1 server forces the reply CID to 0 and every query opens its own
+ * socket, but it was not safe for the SERVER: the reference Prospero doneQ
+ * duplicate cache matches an incoming request on (CID, peer) alone
+ * (ardp_accept.c:363) and then discards it (:415), so a server that
+ * implemented the reference cache faithfully would have answered every
+ * search after the first with the first search's results. We were the only
+ * client on the network reusing a CID, and therefore the only reason that
+ * cache could not be adopted. Every other client allocates per request;
+ * xarchie does it with next_conn_id++ at dirsend.c:495.
+ *
+ * Retransmits WITHIN one query still reuse the same value: that is the
+ * duplicate-resend path and the server is meant to recognise it. */
+static unsigned short archie_next_cid(void)
+{
+    static volatile LONG counter = 0;
+    LONG v;
+
+    if (counter == 0) {
+        /* Seed once from the tick count so two runs of the Suite do not
+         * start from the same place. xarchie seeds from rand() for the
+         * same reason. */
+        InterlockedCompareExchange(&counter,
+                                   (LONG)(GetTickCount() & 0x7FFFu) + 1, 0);
+    }
+    v = InterlockedIncrement(&counter);
+    v &= 0xFFFF;
+    if (v == 0) v = 1;                 /* 0 is reserved on the wire */
+    return (unsigned short)v;
+}
 
 /* Reassembly ceiling. 1024 packets * 1250 payload bytes = ~1.25 MB, far
  * above any real Archie result set (maxhits caps at 2500 hits). A reply
@@ -177,6 +203,23 @@ static void size_value(const char *val, char *out, int outsz)
 /* Reply body parser: LINK / LINK-INFO / status lines -> hit array.    */
 /* ------------------------------------------------------------------ */
 
+/* One attribute, from either dialect's attribute line, into a hit. */
+static void archie_store_attr(archie_hit_t *h, const char *aname,
+                              const char *value)
+{
+    if (strcmp(aname, "SIZE") == 0) {
+        size_value(value, h->size, (int)sizeof h->size);
+    } else if (strcmp(aname, "UNIX-MODES") == 0) {
+        const char *r = value;
+        char m[48];
+        if (next_field(&r, m, sizeof m))
+            copy_bounded(h->mode, (int)sizeof h->mode, m);
+    } else if (strcmp(aname, "LAST-MODIFIED") == 0) {
+        copy_bounded(h->date, (int)sizeof h->date, value);
+    }
+}
+
+
 static archie_status_t parse_body(const char *body, int blen,
                                   archie_result_t *out)
 {
@@ -206,6 +249,27 @@ static archie_status_t parse_body(const char *body, int blen,
         p = nl ? nl + 1 : pend;
         if (linelen == 0) continue;
 
+        if (strncmp(line, "ATTRIBUTE ", 10) == 0) {
+            /* VERSION 5 attribute line. The v1 form is
+             *     LINK-INFO <prec> <aname> ASCII <value...>
+             * and the v5 form carries an extra "nature" field and a
+             * different value type:
+             *     ATTRIBUTE <prec> <nature> <aname> SEQUENCE <value...>
+             * Same three attributes matter to us, so the value handling is
+             * shared with the LINK-INFO branch below. Before this existed
+             * the v5 path silently lost every size, mode and date. */
+            const char *q = line + 10;
+            char prec[64], nature[64], aname[64], atype[16];
+            if (cur < 0) continue;
+            if (!next_field(&q, prec,   sizeof prec))   continue;
+            if (!next_field(&q, nature, sizeof nature)) continue;
+            if (!next_field(&q, aname,  sizeof aname))  continue;
+            if (!next_field(&q, atype,  sizeof atype))  continue;  /* SEQUENCE */
+            while (*q == ' ') q++;                                 /* value   */
+            archie_store_attr(&hits[cur], aname, q);
+            continue;
+        }
+
         if (strncmp(line, "LINK-INFO ", 10) == 0) {
             /* LINK-INFO <prec> <aname> ASCII <value...>  (value is raw). */
             const char *q = line + 10;
@@ -215,16 +279,7 @@ static archie_status_t parse_body(const char *body, int blen,
             if (!next_field(&q, aname, sizeof aname)) continue;
             if (!next_field(&q, atype, sizeof atype)) continue;   /* ASCII */
             while (*q == ' ') q++;                                 /* value */
-            if (strcmp(aname, "SIZE") == 0) {
-                size_value(q, hits[cur].size, (int)sizeof hits[cur].size);
-            } else if (strcmp(aname, "UNIX-MODES") == 0) {
-                const char *r = q;
-                char m[48];
-                if (next_field(&r, m, sizeof m))
-                    copy_bounded(hits[cur].mode, (int)sizeof hits[cur].mode, m);
-            } else if (strcmp(aname, "LAST-MODIFIED") == 0) {
-                copy_bounded(hits[cur].date, (int)sizeof hits[cur].date, q);
-            }
+            archie_store_attr(&hits[cur], aname, q);
             continue;
         }
 
@@ -273,6 +328,20 @@ static archie_status_t parse_body(const char *body, int blen,
             }
             continue;
         }
+        if (strncmp(line, "WARNING ", 8) == 0) {
+            /* A server warning is not an error and must not suppress the
+             * results, but discarding it silently is its own small defect.
+             * The v1 path ends a broad search with
+             *   WARNING OUT-OF-DATE Some information you wanted can't be
+             *   sent. Upgrade to Prospero v5.
+             * which is the server telling us it withheld a record. Keep the
+             * first one so the UI can show it alongside the hits. Now that
+             * we announce VERSION 5 this line should no longer arrive; if it
+             * does, something has fallen back to v1 and we want to see it. */
+            if (out->warning[0] == '\0')
+                copy_bounded(out->warning, (int)sizeof out->warning, line + 8);
+            continue;
+        }
         /* UNRESOLVED / FORWARDED / VERSION and unknown lines: ignore. */
     }
 
@@ -319,8 +388,8 @@ static int build_payload(char *buf, int bufsz, const char *term,
     /* Trailing space after COMPONENTS is intentional (the empty component
      * list); the server strips trailing blanks when reading the line. */
     return _snprintf(buf, (size_t)bufsz,
-                     "VERSION 1 %s\n"
-                     "AUTHENTICATOR UNAUTHENTICATED guest\n"
+                     "VERSION 5 %s\n"
+                     "AUTHENTICATE '' UNAUTHENTICATED ''\n"
                      "DIRECTORY ASCII ARCHIE/MATCH(%d,0,%c)/%s\n"
                      "LIST ATTRIBUTES COMPONENTS \n",
                      ARCHIE_SWID, maxhits, typec, term);
@@ -388,7 +457,7 @@ archie_status_t archie_query(const char *server, int port,
         return ARCHIE_ERR_PROTOCOL;
     }
     hdr[0] = 9;                       /* header length (v0: octet0==hdrlen) */
-    put16(hdr + 1, ARCHIE_REQ_CID);   /* Connection ID                     */
+    put16(hdr + 1, archie_next_cid()); /* Connection ID, fresh per request  */
     put16(hdr + 3, 1);                /* packet seq                        */
     put16(hdr + 5, 1);                /* total packet count                */
     put16(hdr + 7, 0);                /* received-through                  */
