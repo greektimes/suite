@@ -13,6 +13,10 @@ Despina Kavalou-Papadopoulos
 The Retro Mode of this app speaks protocols designed by other people, most of
 them decades ago. Their work is the reason any of this runs.
 
+Attributions below were taken from the specifications themselves wherever a
+specification exists. Where an individual could not be confirmed from a primary
+source, the project or institution is credited instead.
+
 ### Archie (1989-1996)
 
 **Alan Emtage, Bill Heelan and Peter Deutsch**
@@ -24,22 +28,22 @@ Commercial development of Archie, through the final 3.5 release, 1996
 **ICM, University of Warsaw**
 Preserved the last surviving copy of the Archie source
 
-**[The Serial Port](https://serialport.org/)**
-Found it and set it free, 2024
+**Mark Price and Ben Grubbs, [The Serial Port](https://serialport.org/)**
+Tracked down the last surviving copy of Archie and published it, 2024
 
 The Suite's Archie client is original code. It speaks the Prospero ARDP
 protocol rather than reusing any part of the original implementation.
 
 ### Prospero and ARDP
 
-- **B. Clifford Neuman**, USC Information Sciences Institute. Author of the
-  Prospero file system and of ARDP, the reliable datagram protocol that
-  carries an Archie query.
+**B. Clifford Neuman**, USC Information Sciences Institute
+Author of the Prospero file system and of ARDP, the reliable datagram protocol
+that carries an Archie query
 
 ### Archie clients used as parser authorities
 
-- **George Ferguson**, author of **xarchie**, the X11 Archie client.
-- **Brendan Kehoe**, author of the **archie** C client.
+**George Ferguson**, author of **xarchie**, the X11 Archie client
+**Brendan Kehoe**, author of the **archie** C client
 
 Both are cited by file and line throughout this project's protocol notes. Their
 parsers settled several questions about the wire format that the documentation
@@ -47,41 +51,82 @@ alone could not.
 
 ### WAIS
 
-- **Brewster Kahle**, **Harry Morris**, **Franklin Davis** and
-  **Jonny Goldman**. Authors of WAIS.
-- **Jane Smith** and **Jim Fullton**, CNIDR, who maintained and released the
-  free WAIS implementation.
-- **Ulrich Pfeifer** and **Norbert Govert**, authors of **freeWAIS-sf**, the
-  code this client's Z39.50-1988 layer is built from.
+**Brewster Kahle, Harry Morris, Franklin Davis and Jonny Goldman**
+Authors of WAIS
 
-### CU-SeeMe
+**Jane Smith and Jim Fullton**, CNIDR
+Maintained and released the free WAIS implementation
 
-- **Tim Dorcey** and the CU-SeeMe team at **Cornell University**. Authors of
-  CU-SeeMe, the first widely used internet video conferencing system.
-
-### File Transfer Protocol and FTP-Mail
-
-- **Jon Postel**, USC Information Sciences Institute. Author of RFC 765,
-  June 1980, the File Transfer Protocol specification this app's ARPANET
-  FTP-Mail client follows.
+**Ulrich Pfeifer and Norbert Govert**
+Authors of freeWAIS-sf, the code this client's Z39.50-1988 layer is built from
 
 ### Gopher
 
-- The **Gopher team at the University of Minnesota**, who designed and released
-  Gopher, specified in RFC 1436.
+**Farhad Anklesaria, Mark McCahill, Paul Lindner, David Johnson, Daniel Torrey
+and Bob Alberti**, University of Minnesota
+Authors of the Internet Gopher Protocol, RFC 1436, March 1993. Gopher was
+created at Minnesota in 1991 by the team McCahill led.
+
+### Electronic mail and ARPANET FTP-Mail
+
+**Ray Tomlinson**
+Sent the first network email on the ARPANET in 1971, and chose the @ sign to
+separate the user from the host
+
+**Jon Postel**, USC Information Sciences Institute
+Author of RFC 765, the File Transfer Protocol, June 1980, which this module
+implements
+
+**Brian Harvey**
+Author of RFC 691, "One More Try on the FTP", which defines the mail extensions
+this module uses
 
 ### Internet Relay Chat
 
-- **Jarkko Oikarinen**, author of IRC.
+**Jarkko Oikarinen**
+Created IRC in 1988, and co-author with **Darren Reed** of RFC 1459, the IRC
+protocol specification
+
+### CU-SeeMe
+
+**Tim Dorcey** and the CU-SeeMe team at **Cornell University**
+Authors of CU-SeeMe, the first widely used Internet video conferencing system
+
+### Telnet and the terminal
+
+**Jon Postel and Joyce Reynolds**
+Authors of RFC 854, the Telnet Protocol Specification
+
+**Digital Equipment Corporation**
+The VT220 terminal this module emulates
+
+### Finger
+
+**Les Earnest**
+Wrote the original FINGER program at the Stanford Artificial Intelligence
+Laboratory, as recorded in RFC 1288 itself
+
+**David Zimmerman**
+Author of RFC 1288, the Finger User Information Protocol
+
+### Quote of the Day
+
+**Jon Postel**, USC Information Sciences Institute
+Author of RFC 865, the Quote of the Day Protocol
 
 ### The World Wide Web
 
-- **Tim Berners-Lee** and the **W3C**, authors of **libwww**, the reference HTTP
-  library this app's retro browser is built on.
+**Tim Berners-Lee**
+Invented the World Wide Web and HTTP, which this app's retro browser speaks
 
-Where an individual author could not be verified from a primary source, the
-project or institution is credited instead. An unverified name in a credits
-file is worse than an omission.
+**Tim Berners-Lee and the W3C**
+Authors of libwww, the reference HTTP library the retro browser is built on
+
+### Newspaper reader
+
+**The Internet Archive**
+Authors of BookReader, which presents the print edition. BookReader is AGPLv3,
+and is why the whole Suite is AGPLv3.
 
 ---
 
