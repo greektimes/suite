@@ -36,8 +36,13 @@ LICENSE
 The MGT Unicorn Suite is free software, released under the GNU
 Affero General Public License v3.0 or later; see LICENSE.TXT.
 Third-party attribution and license texts are in NOTICES.TXT and
-the LICENSES directory. The complete corresponding source is at
-https://github.com/greektimes/suite
+the LICENSES directory.
+
+The complete Corresponding Source for this exact build is at
+
+  https://github.com/greektimes/suite/releases/tag/v0.3.1-beta
+
+Build it with build_x64.bat under MSYS2 UCRT64.
 
 CONTACT
 

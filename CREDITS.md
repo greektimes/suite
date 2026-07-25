@@ -13,12 +13,22 @@ Despina Kavalou-Papadopoulos
 The Retro Mode of this app speaks protocols designed by other people, most of
 them decades ago. Their work is the reason any of this runs.
 
-### Archie
+### Archie (1989-1996)
 
-- **Alan Emtage**, **Bill Heelan** and **Peter Deutsch**, McGill University,
-  1990. Authors of Archie, the first internet search engine.
-- **Bunyip Information Systems**, Montreal. Commercial development of Archie
-  and the 3.5 release this client was written against.
+**Alan Emtage, Bill Heelan and Peter Deutsch**
+Creators of Archie, the first Internet search engine, McGill University, 1989
+
+**Bunyip Information Systems, Inc.**
+Commercial development of Archie, through the final 3.5 release, 1996
+
+**ICM, University of Warsaw**
+Preserved the last surviving copy of the Archie source
+
+**[The Serial Port](https://serialport.org/)**
+Found it and set it free, 2024
+
+The Suite's Archie client is original code. It speaks the Prospero ARDP
+protocol rather than reusing any part of the original implementation.
 
 ### Prospero and ARDP
 
