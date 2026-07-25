@@ -16,6 +16,7 @@
 #include "telnet_module.h"
 #include "cuseeme_module.h"
 #include "irc_module.h"
+#include "archie_module.h"
 #include "mode_toggle.h"
 #include "modern_mode.h"
 #include "livetv_module.h"
@@ -80,62 +81,60 @@
 #define ID_BTN_TELNET   SUITE_ID_BTN_TELNET
 #define ID_BTN_CUSEEME  SUITE_ID_BTN_CUSEEME
 #define ID_BTN_IRC      SUITE_ID_BTN_IRC
-#define ID_MODULE_COUNT 8
+#define ID_BTN_ARCHIE   SUITE_ID_BTN_ARCHIE
+#define ID_MODULE_COUNT 9
 
-#define ID_HELP_ABOUT   200
-#define ID_HELP_OPEN    201   /* F12: open the Help menu by mnemonic, or QOTD
-                               * on the Terminal tab when its shortcuts are live */
-/* Terminal-tab shortcut accelerators (2026-07-18). Each fires the
- * matching shortcut button ONLY when Terminal is the active visible
- * Retro module and that button is currently enabled; inert otherwise.
- * F12 keeps ID_HELP_OPEN and is context-branched in WM_COMMAND. */
-#define ID_TERM_F9      210   /* F9:  Telnet News shortcut */
-#define ID_TERM_F10     211   /* F10: Finger News shortcut */
-#define ID_TERM_F11     212   /* F11: Finger Weather shortcut */
+#define ID_HELP_ABOUT   200   /* Help > About (mouse / Alt+H mnemonic) */
 
 #define ID_STATUS       300
 
-/* Module table. One entry per MVP module, in left-to-right button order.
- * Tab order (post 2026-07-18 swap of Terminal and IRC):
- *   F1 Unicorn Desktop, F2 Retro Web Browser, F3 Gopher,
- *   F4 ARPANET FTP-Mail, F5 WAIS Search, F6 IRC,
- *   F7 CU-SeeMe Live TV, F8 Terminal.
- * The bar renders in table order, so Terminal (moved to F8) is the last
- * row and IRC (moved to F6) sits between WAIS and CU-SeeMe. Each module
- * keeps its stable command id (ID_BTN_TELNET / ID_BTN_IRC); only the
- * array position, the "(Fn)" label, and the VK_Fn->command-id
- * accelerator mapping changed. Unicorn Desktop stays at index 0 so it is
- * default-active on launch (switch_to_module(0) at WM_CREATE). */
+/* Module table. One entry per module, in left-to-right button order.
+ * Tab order (2026-07-24: native Archie inserted immediately after WAIS):
+ *   Unicorn Desktop, Retro Web Browser, Gopher, ARPANET FTP-Mail,
+ *   WAIS, Archie, IRC, CU-SeeMe Live TV, Terminal.
+ * The bar renders in table order. Each module keeps its stable command
+ * id; the F1-F12 accelerators were retired (the retro section ran out of
+ * function keys), so tab switching is now mouse-only. Unicorn Desktop
+ * stays at index 0 so it is default-active on launch (switch_to_module(0)
+ * at WM_CREATE).
+ *
+ * Button labels are one or two centered rows (paint_button splits on an
+ * embedded '\n'); single-row labels (WAIS, Archie, Gopher, IRC, Terminal)
+ * sit vertically centered so they align with the two-row tabs. */
 static const suite_module_t g_modules[ID_MODULE_COUNT] = {
-    { "Unicorn Desktop (F1)",      ID_BTN_DESKTOP,
+    { "Unicorn\nDesktop",          ID_BTN_DESKTOP,
       activedesktop_module_activate, activedesktop_module_deactivate,
       activedesktop_module_resize,   activedesktop_module_on_command,
       activedesktop_module_has_unsaved },
-    { "Retro Web Browser (F2)",    ID_BTN_WEB,
+    { "Retro Web\nBrowser",        ID_BTN_WEB,
       web_module_activate, web_module_deactivate,
       web_module_resize, web_module_on_command,
       web_module_has_unsaved },
-    { "Gopher (F3)",               ID_BTN_GOPHER,
+    { "Gopher",                    ID_BTN_GOPHER,
       gopher_module_activate, gopher_module_deactivate,
       gopher_module_resize,   gopher_module_on_command,
       gopher_module_has_unsaved },
-    { "ARPANET FTP-Mail (F4)",     ID_BTN_ARPAMAIL,
+    { "ARPANET\nFTP-Mail",         ID_BTN_ARPAMAIL,
       arpamail_module_activate, arpamail_module_deactivate,
       arpamail_module_resize, arpamail_module_on_command,
       arpamail_module_has_unsaved },
-    { "WAIS Search (F5)",          ID_BTN_WAIS,
+    { "WAIS",                      ID_BTN_WAIS,
       wais_module_activate, wais_module_deactivate,
       wais_module_resize, wais_module_on_command,
       wais_module_has_unsaved },
-    { "IRC (F6)",                  ID_BTN_IRC,
+    { "Archie",                    ID_BTN_ARCHIE,
+      archie_module_activate, archie_module_deactivate,
+      archie_module_resize,   archie_module_on_command,
+      archie_module_has_unsaved },
+    { "IRC",                       ID_BTN_IRC,
       irc_module_activate, irc_module_deactivate,
       irc_module_resize,   irc_module_on_command,
       irc_module_has_unsaved },
-    { "CU-SeeMe Live TV (F7)",     ID_BTN_CUSEEME,
+    { "CU-SeeMe\nLive TV",         ID_BTN_CUSEEME,
       cuseeme_module_activate, cuseeme_module_deactivate,
       cuseeme_module_resize,   cuseeme_module_on_command,
       cuseeme_module_has_unsaved },
-    { "Terminal (F8)",             ID_BTN_TELNET,
+    { "Terminal",                  ID_BTN_TELNET,
       telnet_module_activate, telnet_module_deactivate,
       telnet_module_resize,   telnet_module_on_command,
       telnet_module_has_unsaved },
@@ -143,24 +142,10 @@ static const suite_module_t g_modules[ID_MODULE_COUNT] = {
 
 static HWND g_hwndMain    = NULL;
 static HWND g_hwndButtons[ID_MODULE_COUNT] =
-    { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL };
+    { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL };
 static HWND g_hwndContent = NULL;
 static HWND g_hwndStatus  = NULL;
 static int  g_active_module = -1;
-
-static HACCEL g_hAccel = NULL;
-
-/* F12 Help-menu toggle (2026-07-18). While the Help menu is open the
- * thread runs a modal menu loop, and the main message loop's
- * TranslateAccelerator does NOT run -- so a second F12 never reaches the
- * ID_HELP_OPEN WM_COMMAND handler (verified live: GUI_INMENUMODE stays
- * set across repeated F12 posts). To close the menu on F12 we install a
- * thread-local WH_MSGFILTER hook, whose proc IS called (nCode ==
- * MSGF_MENU) for each message the menu loop pumps. It catches the F12
- * WM_KEYDOWN and calls EndMenu(), which ends the thread's active menu
- * however it was opened (F12 mnemonic post, Alt+H, or mouse), so the app
- * never sticks in menu mode. The open direction stays in the handler. */
-static HHOOK g_hMenuKeyHook = NULL;
 
 /* v0.2.0 Modern Mode state. Modern is the default on first launch
  * (decision 13). g_last_modern_tab and g_last_retro_module remember
@@ -196,39 +181,6 @@ static void layout_children(HWND hwnd);
 static void switch_to_module(int idx);
 static int  command_id_to_index(int id);
 static void paint_button(LPDRAWITEMSTRUCT dis);
-static BOOL suite_in_menu_mode(void);
-static LRESULT CALLBACK menu_key_hook_proc(int nCode, WPARAM wParam, LPARAM lParam);
-
-/* TRUE when this (UI) thread is currently running a menu modal loop --
- * the Help menu bar, its "About" popup, or a system menu -- opened by
- * F12, Alt+H, or mouse. GUI_INMENUMODE covers the menu-bar loop;
- * GUI_SYSTEMMENUMODE / GUI_POPUPMENUMODE cover the system and popup
- * cases so the F12 toggle never misreads a popup as "closed". */
-static BOOL suite_in_menu_mode(void)
-{
-    GUITHREADINFO gti;
-    ZeroMemory(&gti, sizeof(gti));
-    gti.cbSize = sizeof(gti);
-    if (!GetGUIThreadInfo(GetCurrentThreadId(), &gti)) return FALSE;
-    return (gti.flags &
-            (GUI_INMENUMODE | GUI_SYSTEMMENUMODE | GUI_POPUPMENUMODE)) != 0;
-}
-
-/* WH_MSGFILTER proc: runs during the menu modal loop (nCode == MSGF_MENU)
- * where accelerators do not. Closes the active menu on F12 so the key
- * toggles Help shut; returns TRUE to swallow that keystroke. All other
- * messages pass through untouched. */
-static LRESULT CALLBACK menu_key_hook_proc(int nCode, WPARAM wParam, LPARAM lParam)
-{
-    if (nCode == MSGF_MENU) {
-        MSG *pmsg = (MSG *)lParam;
-        if (pmsg && pmsg->message == WM_KEYDOWN && pmsg->wParam == VK_F12) {
-            EndMenu();
-            return TRUE;
-        }
-    }
-    return CallNextHookEx(g_hMenuKeyHook, nCode, wParam, lParam);
-}
 
 /* ------------------------------------------------------------------ */
 /* Status API used by modules.                                         */
@@ -397,52 +349,49 @@ static void paint_button(LPDRAWITEMSTRUCT dis)
     if (g_hFontUI) SelectObject(dis->hDC, g_hFontUI);
     len = GetWindowTextA(dis->hwndItem, text, (int)sizeof(text));
 
-    /* Dispatch amendment 2026-06-15 (item 6): split "Name (Fn)" into
-     * two centered lines. The protocol-name half goes on top in the
-     * normal UI font; the "(F#)" half goes underneath, vertically
-     * centered together as a pair. The module table still stores the
-     * combined label so accelerator/focus code keeps the same key for
-     * each button; we just split on the last ' (' for paint purposes.
-     * Fallback to the old single-line behavior if no parenthesized
-     * suffix is present. */
+    /* Two-row centered tab labels (2026-07-24). The module table stores a
+     * one- or two-row label; a two-row label carries an embedded '\n'
+     * (e.g. "Unicorn\nDesktop"). Both rows are drawn DT_CENTER and the
+     * whole block is vertically centered, so single-row labels (WAIS,
+     * Archie, Gopher, IRC, Terminal) line up with the two-row tabs. */
     {
-        const char *paren = NULL;
+        const char *nl = NULL;
         int   i;
         int   line_h;
         SIZE  sz;
-        RECT  name_rc, fk_rc;
-        int   pair_h;
-        int   top;
+        int   block_h, top;
 
-        for (i = len - 1; i >= 1; i--) {
-            if (text[i] == '(' && text[i - 1] == ' ') { paren = text + i; break; }
+        for (i = 0; i < len; i++) {
+            if (text[i] == '\n') { nl = text + i; break; }
         }
 
         GetTextExtentPoint32A(dis->hDC, "Xy", 2, &sz);
         line_h = sz.cy > 0 ? sz.cy : 14;
-        pair_h = paren ? (line_h * 2 + 2) : line_h;
-        top    = rc.top + ((rc.bottom - rc.top) - pair_h) / 2;
+        block_h = nl ? (line_h * 2 + 2) : line_h;
+        top    = rc.top + ((rc.bottom - rc.top) - block_h) / 2;
         if (top < rc.top) top = rc.top;
 
-        if (paren) {
-            int name_len = (int)(paren - text) - 1;  /* drop the trailing space */
-            if (name_len < 0) name_len = 0;
-            name_rc.left   = rc.left;
-            name_rc.right  = rc.right;
-            name_rc.top    = top;
-            name_rc.bottom = top + line_h;
-            DrawTextA(dis->hDC, text, name_len, &name_rc,
+        if (nl) {
+            int  first_len = (int)(nl - text);
+            const char *second = nl + 1;
+            int  second_len = len - first_len - 1;
+            RECT r1, r2;
+
+            r1.left = rc.left; r1.right = rc.right;
+            r1.top  = top;     r1.bottom = top + line_h;
+            DrawTextA(dis->hDC, text, first_len, &r1,
                       DT_CENTER | DT_SINGLELINE | DT_NOPREFIX);
 
-            fk_rc.left   = rc.left;
-            fk_rc.right  = rc.right;
-            fk_rc.top    = top + line_h + 2;
-            fk_rc.bottom = fk_rc.top + line_h;
-            DrawTextA(dis->hDC, paren, len - (int)(paren - text), &fk_rc,
+            r2.left = rc.left; r2.right = rc.right;
+            r2.top  = top + line_h + 2; r2.bottom = r2.top + line_h;
+            DrawTextA(dis->hDC, second, second_len, &r2,
                       DT_CENTER | DT_SINGLELINE | DT_NOPREFIX);
         } else {
-            DrawTextA(dis->hDC, text, len, &rc,
-                      DT_CENTER | DT_VCENTER | DT_SINGLELINE | DT_NOPREFIX);
+            RECT r1;
+            r1.left = rc.left; r1.right = rc.right;
+            r1.top  = top;     r1.bottom = top + line_h;
+            DrawTextA(dis->hDC, text, len, &r1,
+                      DT_CENTER | DT_SINGLELINE | DT_NOPREFIX);
         }
     }
 
@@ -459,17 +408,6 @@ static int command_id_to_index(int id)
     for (i = 0; i < ID_MODULE_COUNT; i++)
         if (g_modules[i].command_id == id) return i;
     return -1;
-}
-
-/* TRUE when the Terminal module (F8, command id ID_BTN_TELNET) is the
- * active, visible Retro module. Gates the F9-F12 terminal-shortcut
- * accelerators so they are inert on any other tab and in Modern mode.
- * The per-button enabled-state gate lives in the terminal module. */
-static BOOL terminal_is_active_visible(void)
-{
-    return g_mode == MODE_RETRO &&
-           g_active_module >= 0 &&
-           g_modules[g_active_module].command_id == ID_BTN_TELNET;
 }
 
 /* ------------------------------------------------------------------ */
@@ -850,12 +788,6 @@ static LRESULT CALLBACK SuiteWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
             ShowWindow(g_hwndModernMode, SW_SHOW);
         }
 
-        /* Install the F12-in-menu toggle hook on this UI thread. It is
-         * inert except during a menu modal loop (nCode == MSGF_MENU), so
-         * carrying it for the window's lifetime costs nothing. */
-        g_hMenuKeyHook = SetWindowsHookExA(WH_MSGFILTER, menu_key_hook_proc,
-                                           NULL, GetCurrentThreadId());
-
         layout_children(hwnd);
         SetWindowTextA(hwnd, SUITE_APP_TITLE " - Modern");
         return 0;
@@ -972,11 +904,12 @@ static LRESULT CALLBACK SuiteWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
         case ID_BTN_GOPHER:
         case ID_BTN_ARPAMAIL:
         case ID_BTN_WAIS:
+        case ID_BTN_ARCHIE:
         case ID_BTN_TELNET:
         case ID_BTN_CUSEEME:
         case ID_BTN_IRC: {
             int idx = command_id_to_index(wmId);
-            /* F1-F6 are Retro-mode controls. In Modern Mode they are
+            /* Tab buttons are Retro-mode controls. In Modern Mode they are
              * inert (the user must toggle to Retro first); this keeps
              * the Modern Mode UX strictly tab-driven. */
             if (g_mode == MODE_MODERN) return 0;
@@ -986,48 +919,11 @@ static LRESULT CALLBACK SuiteWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
         case ID_HELP_ABOUT:
             suite_about_show(hwnd);
             return 0;
-        case ID_TERM_F9:
-            /* F9: Telnet News, only on the active Terminal tab with the
-             * shortcut enabled; the module ignores it otherwise. */
-            if (terminal_is_active_visible())
-                telnet_module_fire_shortcut(0);
-            return 0;
-        case ID_TERM_F10:
-            if (terminal_is_active_visible())
-                telnet_module_fire_shortcut(1);
-            return 0;
-        case ID_TERM_F11:
-            if (terminal_is_active_visible())
-                telnet_module_fire_shortcut(2);
-            return 0;
-        case ID_HELP_OPEN:
-            /* F12 is context-sensitive: QOTD on the active Terminal tab
-             * when its shortcut buttons are live, Help everywhere else
-             * (other tabs, Modern suite, or Terminal while a session has
-             * grayed the shortcuts). telnet_module_fire_shortcut returns
-             * FALSE when the QOTD button is disabled, so the && falls
-             * through to the Help path automatically. */
-            if (terminal_is_active_visible() && telnet_module_fire_shortcut(3))
-                return 0;
-            /* Toggle: if a menu is already open, close it; else open Help.
-             * In practice the close half is handled by menu_key_hook_proc
-             * (this handler is not reached during the modal menu loop, as
-             * accelerators are suppressed there), but the menu-mode branch
-             * makes the toggle correct from both directions in the rare
-             * case the handler does run while a menu is up. */
-            if (suite_in_menu_mode()) {
-                EndMenu();
-            } else {
-                /* Programmatic equivalent of Alt+H: opens the Help menu by mnemonic. */
-                PostMessageA(hwnd, WM_SYSCOMMAND, SC_KEYMENU, (LPARAM)'H');
-            }
-            return 0;
         }
         break;
     }
 
     case WM_DESTROY:
-        if (g_hMenuKeyHook) { UnhookWindowsHookEx(g_hMenuKeyHook); g_hMenuKeyHook = NULL; }
         if (g_hFontTitleLabel) { DeleteObject(g_hFontTitleLabel); g_hFontTitleLabel = NULL; }
         PostQuitMessage(0);
         return 0;
@@ -1045,7 +941,6 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrev, LPSTR lpCmdLine, int nShow)
     WNDCLASSEXA wc;
     MSG msg;
     INITCOMMONCONTROLSEX icc;
-    ACCEL accel[12];
     WSADATA wsaData;
 
     (void)hPrev;
@@ -1151,23 +1046,10 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrev, LPSTR lpCmdLine, int nShow)
         NULL, build_menu(), hInst, NULL);
     if (!g_hwndMain) return 1;
 
-    /* F-key -> module map (2026-07-18: F6 now IRC, F8 now Terminal;
-     * each module keeps its stable command id). F9-F11 drive the
-     * Terminal tab's shortcut buttons; F12 stays Help (context-branched
-     * to QOTD on the active Terminal tab in WM_COMMAND). */
-    accel[0].fVirt  = FVIRTKEY; accel[0].key  = VK_F1;  accel[0].cmd  = ID_BTN_DESKTOP;
-    accel[1].fVirt  = FVIRTKEY; accel[1].key  = VK_F2;  accel[1].cmd  = ID_BTN_WEB;
-    accel[2].fVirt  = FVIRTKEY; accel[2].key  = VK_F3;  accel[2].cmd  = ID_BTN_GOPHER;
-    accel[3].fVirt  = FVIRTKEY; accel[3].key  = VK_F4;  accel[3].cmd  = ID_BTN_ARPAMAIL;
-    accel[4].fVirt  = FVIRTKEY; accel[4].key  = VK_F5;  accel[4].cmd  = ID_BTN_WAIS;
-    accel[5].fVirt  = FVIRTKEY; accel[5].key  = VK_F6;  accel[5].cmd  = ID_BTN_IRC;
-    accel[6].fVirt  = FVIRTKEY; accel[6].key  = VK_F7;  accel[6].cmd  = ID_BTN_CUSEEME;
-    accel[7].fVirt  = FVIRTKEY; accel[7].key  = VK_F8;  accel[7].cmd  = ID_BTN_TELNET;
-    accel[8].fVirt  = FVIRTKEY; accel[8].key  = VK_F9;  accel[8].cmd  = ID_TERM_F9;
-    accel[9].fVirt  = FVIRTKEY; accel[9].key  = VK_F10; accel[9].cmd  = ID_TERM_F10;
-    accel[10].fVirt = FVIRTKEY; accel[10].key = VK_F11; accel[10].cmd = ID_TERM_F11;
-    accel[11].fVirt = FVIRTKEY; accel[11].key = VK_F12; accel[11].cmd = ID_HELP_OPEN;
-    g_hAccel = CreateAcceleratorTableA(accel, 12);
+    /* The F1-F12 accelerator table was retired on 2026-07-24: the retro
+     * section ran out of function keys, so tab switching and the Terminal
+     * shortcut buttons are now mouse-only. Help stays reachable via the
+     * Help menu (mouse or the Alt+H mnemonic). */
 
     ShowWindow(g_hwndMain, nShow);
     UpdateWindow(g_hwndMain);
@@ -1176,19 +1058,25 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrev, LPSTR lpCmdLine, int nShow)
         HWND focused;
         BOOL focus_in_content;
 
-        if (g_hAccel && TranslateAcceleratorA(g_hwndMain, g_hAccel, &msg))
-            continue;
-
         /* IsDialogMessage is great for Tab cycling between the top buttons,
          * but it also intercepts arrow / scroll / Tab keys that module
          * controls inside the content panel need for themselves (e.g., the
          * WAIS output edit's scroll keys). Only invoke it when the focus
          * is NOT inside the content panel. Also skip Alt-key system
-         * messages so menu mnemonics reach DefWindowProc. */
+         * messages so menu mnemonics reach DefWindowProc.
+         *
+         * 2026-07-24: use IsChild (whole content subtree), not just
+         * GetParent==content (direct children). The Archie tab nests its
+         * controls inside a private container (g_a_panel), so a direct-child
+         * check left its focus reading as "not in content"; IsDialogMessage
+         * then ran and looped forever in GetNextDlgTabItem on that panel's
+         * WS_EX_CONTROLPARENT (Not Responding on Search). IsChild restores
+         * the v1 intent for any nesting depth and is identical to the old
+         * check for the other tabs' direct-child controls. */
         focused = GetFocus();
         focus_in_content = (focused != NULL) &&
                            (focused == g_hwndContent ||
-                            GetParent(focused) == g_hwndContent);
+                            IsChild(g_hwndContent, focused));
         if (!focus_in_content &&
             msg.message != WM_SYSKEYDOWN && msg.message != WM_SYSKEYUP &&
             msg.message != WM_SYSCHAR    && msg.message != WM_SYSDEADCHAR &&
@@ -1198,7 +1086,6 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrev, LPSTR lpCmdLine, int nShow)
         DispatchMessageA(&msg);
     }
 
-    if (g_hAccel) { DestroyAcceleratorTable(g_hAccel); g_hAccel = NULL; }
     irc_module_shutdown();
     cuseeme_module_shutdown();
     telnet_module_shutdown();

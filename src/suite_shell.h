@@ -16,7 +16,7 @@
 #endif
 #include <windows.h>
 
-#define SUITE_VERSION_STRING "v0.2.0-beta"
+#define SUITE_VERSION_STRING "v0.3.0-beta"
 #define SUITE_APP_TITLE      "Montreal Greek Times Unicorn Suite"
 
 /* Module descriptor: one row per protocol module. See BLUEPRINT section 3.3.
@@ -49,6 +49,7 @@ typedef struct suite_module {
 #define SUITE_ID_BTN_TELNET   (SUITE_ID_BTN_BASE + 5)
 #define SUITE_ID_BTN_CUSEEME  (SUITE_ID_BTN_BASE + 6)
 #define SUITE_ID_BTN_IRC      (SUITE_ID_BTN_BASE + 7)
+#define SUITE_ID_BTN_ARCHIE   (SUITE_ID_BTN_BASE + 8)
 
 /* Amendment 4: drag-resize gate. The shell sets a flag while the user
  * is in a continuous window-edge drag (WM_ENTERSIZEMOVE ..
@@ -145,5 +146,12 @@ void irc_module_deactivate(HWND content);
 void irc_module_resize(HWND content, int w, int h);
 BOOL irc_module_on_command(HWND content, WPARAM wParam, LPARAM lParam);
 BOOL irc_module_has_unsaved(void);
+
+/* Archie Search (native Prospero/ARDP client, tab immediately after WAIS). */
+void archie_module_activate(HWND content);
+void archie_module_deactivate(HWND content);
+void archie_module_resize(HWND content, int w, int h);
+BOOL archie_module_on_command(HWND content, WPARAM wParam, LPARAM lParam);
+BOOL archie_module_has_unsaved(void);
 
 #endif /* SUITE_SHELL_H */

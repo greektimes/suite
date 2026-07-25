@@ -68,6 +68,16 @@ int  telnet_proto_open(const char *host, int port,
  * function does a synchronous send() on the worker's socket. */
 int  telnet_proto_send(TelnetProto *t, const void *buf, size_t len);
 
+/* Non-zero once the server has negotiated remote echo (sent IAC WILL
+ * ECHO and not since retracted it with WONT ECHO). The F6 module uses
+ * this to decide whether to echo typed characters locally: it echoes
+ * only when the server is NOT echoing, so a line service that stays
+ * silent (e.g. the interactive Archie service) still shows the user's
+ * keystrokes, while a character-mode server that echoes does not get a
+ * doubled echo. Reads a plain flag written by the worker thread; a race
+ * during the brief negotiation window is benign. */
+int  telnet_proto_server_echo(TelnetProto *t);
+
 /* Tear down: signal the worker to stop, close the socket, join the
  * thread, free the handle. After this returns the handle is invalid. */
 void telnet_proto_close(TelnetProto *t);

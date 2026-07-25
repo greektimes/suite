@@ -62,6 +62,7 @@
 #define IDC_TELNET_BTN_QOTD      6104
 #define IDC_TELNET_STATUS        6105
 #define IDC_TELNET_RENDER        6106
+#define IDC_TELNET_BTN_ARCHIE    6107
 
 #define TELNET_RENDER_CLASS  "MGTTelnetTerminalV1"
 
@@ -101,6 +102,7 @@ static HWND   g_hBtnTelnet     = NULL;
 static HWND   g_hBtnFingerNews = NULL;
 static HWND   g_hBtnFingerWx   = NULL;
 static HWND   g_hBtnQotd       = NULL;
+static HWND   g_hBtnArchie     = NULL;
 static HWND   g_hStatus        = NULL;
 static HWND   g_hRender        = NULL;
 
@@ -320,6 +322,7 @@ static void enable_macro_buttons(BOOL enable)
     if (g_hBtnFingerNews) EnableWindow(g_hBtnFingerNews, enable);
     if (g_hBtnFingerWx)   EnableWindow(g_hBtnFingerWx,   enable);
     if (g_hBtnQotd)       EnableWindow(g_hBtnQotd,       enable);
+    if (g_hBtnArchie)     EnableWindow(g_hBtnArchie,     enable);
 }
 
 static void cancel_macro_timer(void)
@@ -415,7 +418,7 @@ static void emit_boot_banner(void)
     term_write("The Montreal Greek Times Unicorn Suite Terminal\r\n");
     term_write("Type 'help' to list available commands,\r\n");
     term_write("or select one of the shortcut buttons above:\r\n");
-    term_write("Telnet News, Finger News, Finger Weather, or QOTD.\r\n");
+    term_write("Telnet News, Finger News, Finger Weather, QOTD, or Archie.\r\n");
     term_write("(c) 2026 Dimitri Papadopoulos, The Montreal Greek Times\r\n");
     term_write("\r\n");
     term_write("$ ");
@@ -642,7 +645,9 @@ static void shell_dispatch(const char *cmd_in)
         term_write("  clear                     clear the terminal\r\n");
         term_write("  help                      show this help\r\n");
         term_write("  exit / quit               close active connection\r\n");
-        term_write("(Use the buttons below for quick access.)\r\n");
+        term_write("Archie interactive: telnet archie.greektimes.ca:2323\r\n");
+        term_write("  (then: find <term>, exact <term>, prog, help, quit)\r\n");
+        term_write("(Use the buttons above for quick access.)\r\n");
         term_write("$ ");
         return;
     }
@@ -873,25 +878,40 @@ static void handle_char_shell(int ch)
 
 static void handle_char_telnet(int ch)
 {
-    /* BBSes typically expect CR alone on Enter. The Telnet News service
-     * verified this in the wire probe. */
+    /* Local echo only when the server is NOT echoing for us (RFC 857:
+     * absent an active DO/WILL ECHO the client is responsible for echo).
+     * A line service like the interactive Archie server (udp is the query
+     * side; 2323 is this line interface) neither echoes nor accepts CR
+     * alone, so without local echo the user types blind. Character-mode
+     * servers that send WILL ECHO handle their own echo and get none from
+     * us, avoiding a double echo. */
+    BOOL echo = g_active_telnet && !telnet_proto_server_echo(g_active_telnet);
+
     if (ch == '\r') {
-        unsigned char b = '\r';
-        send_to_server_bytes(&b, 1);
+        /* NVT Enter is CR-LF (RFC 854). The interactive Archie service
+         * ignores a bare CR and only acts on a line terminated by LF, so
+         * CR alone made typing appear to do nothing. CR-LF works for it
+         * and for the other Telnet targets. */
+        unsigned char crlf[2] = { '\r', '\n' };
+        send_to_server_bytes(crlf, 2);
+        if (echo) { term_write("\r\n"); terminal_request_repaint(); }
         return;
     }
     if (ch == '\b' || ch == 0x7F) {
         /* Telnet servers usually want DEL (0x7F) for backspace. */
         unsigned char b = 0x7F;
         send_to_server_bytes(&b, 1);
+        if (echo) { term_write("\b \b"); terminal_request_repaint(); }
         return;
     }
     if (ch >= 0x20 && ch < 0x7F) {
         unsigned char b = (unsigned char)ch;
         send_to_server_bytes(&b, 1);
+        if (echo) { char s[2]; s[0] = (char)ch; s[1] = '\0'; term_write(s);
+                    terminal_request_repaint(); }
         return;
     }
-    /* Other C0 controls pass through as-is. */
+    /* Other C0 controls pass through as-is (not locally echoed). */
     if (ch > 0 && ch < 0x20) {
         unsigned char b = (unsigned char)ch;
         send_to_server_bytes(&b, 1);
@@ -1564,6 +1584,7 @@ void telnet_module_activate(HWND content)
         ShowWindow(g_hBtnFingerNews, SW_SHOW);
         ShowWindow(g_hBtnFingerWx,   SW_SHOW);
         ShowWindow(g_hBtnQotd,       SW_SHOW);
+        ShowWindow(g_hBtnArchie,     SW_SHOW);
         ShowWindow(g_hRender,        SW_SHOW);
         GetClientRect(content, &rc);
         telnet_module_resize(content, rc.right - rc.left, rc.bottom - rc.top);
@@ -1607,32 +1628,39 @@ void telnet_module_activate(HWND content)
      * standard theme handles enabled / hover / pressed / disabled
      * rendering, gives Dimitri the look he asked for at the visual
      * gate, and lets us delete paint_macro_button entirely. */
-    /* Captions carry the F9-F12 accelerator hints (2026-07-18). The keys
-     * are owned by the suite shell's accelerator table and routed back
-     * into this module via telnet_module_fire_shortcut, gated on the
-     * Terminal tab being active and the button being enabled. */
-    g_hBtnTelnet = CreateWindowA("BUTTON", "Telnet News (F9)",
+    /* Shortcut bookmarks. The F9-F12 accelerator hints were dropped from
+     * the captions on 2026-07-24 when the suite retired the F1-F12
+     * accelerator table (the retro section ran out of function keys); the
+     * buttons are click-only now. Archie opens the interactive Archie
+     * service at archie.greektimes.ca:2323 (port 23 there is Telnet News,
+     * so 2323 is explicit). */
+    g_hBtnTelnet = CreateWindowA("BUTTON", "Telnet News",
         WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_PUSHBUTTON,
         0, 0, 100, 36, content,
         (HMENU)(INT_PTR)IDC_TELNET_BTN_TELNET, hInst, NULL);
-    g_hBtnFingerNews = CreateWindowA("BUTTON", "Finger News (F10)",
+    g_hBtnFingerNews = CreateWindowA("BUTTON", "Finger News",
         WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_PUSHBUTTON,
         0, 0, 100, 36, content,
         (HMENU)(INT_PTR)IDC_TELNET_BTN_FINGER_N, hInst, NULL);
-    g_hBtnFingerWx = CreateWindowA("BUTTON", "Finger Weather (F11)",
+    g_hBtnFingerWx = CreateWindowA("BUTTON", "Finger Weather",
         WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_PUSHBUTTON,
         0, 0, 100, 36, content,
         (HMENU)(INT_PTR)IDC_TELNET_BTN_FINGER_W, hInst, NULL);
-    g_hBtnQotd = CreateWindowA("BUTTON", "QOTD (F12)",
+    g_hBtnQotd = CreateWindowA("BUTTON", "QOTD",
         WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_PUSHBUTTON,
         0, 0, 100, 36, content,
         (HMENU)(INT_PTR)IDC_TELNET_BTN_QOTD, hInst, NULL);
+    g_hBtnArchie = CreateWindowA("BUTTON", "Archie",
+        WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_PUSHBUTTON,
+        0, 0, 100, 36, content,
+        (HMENU)(INT_PTR)IDC_TELNET_BTN_ARCHIE, hInst, NULL);
 
     if (g_hFontUI) {
         SendMessageA(g_hBtnTelnet,     WM_SETFONT, (WPARAM)g_hFontUI, TRUE);
         SendMessageA(g_hBtnFingerNews, WM_SETFONT, (WPARAM)g_hFontUI, TRUE);
         SendMessageA(g_hBtnFingerWx,   WM_SETFONT, (WPARAM)g_hFontUI, TRUE);
         SendMessageA(g_hBtnQotd,       WM_SETFONT, (WPARAM)g_hFontUI, TRUE);
+        SendMessageA(g_hBtnArchie,     WM_SETFONT, (WPARAM)g_hFontUI, TRUE);
     }
 
     /* Dispatch amendment 2026-06-15-2 (item 5): the "Local shell
@@ -1670,6 +1698,7 @@ void telnet_module_deactivate(HWND content)
     ShowWindow(g_hBtnFingerNews, SW_HIDE);
     ShowWindow(g_hBtnFingerWx,   SW_HIDE);
     ShowWindow(g_hBtnQotd,       SW_HIDE);
+    ShowWindow(g_hBtnArchie,     SW_HIDE);
     ShowWindow(g_hRender,        SW_HIDE);
 }
 
@@ -1688,12 +1717,12 @@ void telnet_module_resize(HWND content, int w, int h)
     (void)content;
     if (!g_controls_created) return;
 
-    btn_w = (w - 2 * margin - 3 * btn_gap) / 4;
+    btn_w = (w - 2 * margin - 4 * btn_gap) / 5;
     if (btn_w < 80) btn_w = 80;
 
     /* Top: shortcut bar (Telnet News / Finger News / Finger Weather /
-     * QOTD). Dispatch 2026-06-25: moved from the bottom of the view to
-     * the top, directly below the F1-F6 tab row. */
+     * QOTD / Archie). Dispatch 2026-06-25: moved from the bottom of the
+     * view to the top, directly below the tab row. */
     bar_y = margin;
 
     /* Terminal box fills the rest, shifted down by the bar height plus
@@ -1709,12 +1738,14 @@ void telnet_module_resize(HWND content, int w, int h)
     MoveWindow(g_hBtnTelnet,     x, y, btn_w, btn_h, TRUE); x += btn_w + btn_gap;
     MoveWindow(g_hBtnFingerNews, x, y, btn_w, btn_h, TRUE); x += btn_w + btn_gap;
     MoveWindow(g_hBtnFingerWx,   x, y, btn_w, btn_h, TRUE); x += btn_w + btn_gap;
-    MoveWindow(g_hBtnQotd,       x, y, btn_w, btn_h, TRUE);
+    MoveWindow(g_hBtnQotd,       x, y, btn_w, btn_h, TRUE); x += btn_w + btn_gap;
+    MoveWindow(g_hBtnArchie,     x, y, btn_w, btn_h, TRUE);
 }
 
-/* Shared shortcut trigger for both the mouse (BN_CLICKED) and keyboard
- * (F9-F12 via telnet_module_fire_shortcut) paths. `id` is one of the
- * IDC_TELNET_BTN_* button ids. */
+/* Shared shortcut trigger for the macro-button clicks. `id` is one of the
+ * IDC_TELNET_BTN_* button ids. Archie connects to the interactive Archie
+ * service on port 2323 (a plain find/exact/prog/help/quit line protocol);
+ * port 23 on that host is the Telnet News service, so 2323 is explicit. */
 static void trigger_shortcut(int id)
 {
     const char *cmd = NULL;
@@ -1723,6 +1754,7 @@ static void trigger_shortcut(int id)
     case IDC_TELNET_BTN_FINGER_N:  cmd = "finger news@finger.greektimes.ca";   break;
     case IDC_TELNET_BTN_FINGER_W:  cmd = "finger weather@finger.greektimes.ca"; break;
     case IDC_TELNET_BTN_QOTD:      cmd = "nc qotd.greektimes.ca 17";           break;
+    case IDC_TELNET_BTN_ARCHIE:    cmd = "telnet archie.greektimes.ca:2323";   break;
     default: return;
     }
     /* Dispatch amendment 2026-06-15 (item 5): disable all four
@@ -1749,6 +1781,7 @@ BOOL telnet_module_on_command(HWND content, WPARAM wParam, LPARAM lParam)
         case IDC_TELNET_BTN_FINGER_N:
         case IDC_TELNET_BTN_FINGER_W:
         case IDC_TELNET_BTN_QOTD:
+        case IDC_TELNET_BTN_ARCHIE:
             trigger_shortcut(id);
             return TRUE;
         default:
@@ -1756,30 +1789,6 @@ BOOL telnet_module_on_command(HWND content, WPARAM wParam, LPARAM lParam)
         }
     }
     return FALSE;
-}
-
-/* Keyboard entry point for the F9-F12 accelerators, called from the
- * suite shell's WM_COMMAND after it confirms the Terminal tab is the
- * active visible Retro module. `which`: 0=Telnet News, 1=Finger News,
- * 2=Finger Weather, 3=QOTD. Fires the shortcut only if its button exists
- * and is currently enabled (grayed during an active session), keeping
- * the accelerator and the visible button in lockstep. Returns TRUE if
- * the shortcut fired -- the F12 path uses that to fall back to Help when
- * QOTD is unavailable. */
-BOOL telnet_module_fire_shortcut(int which)
-{
-    HWND btn = NULL;
-    int  id  = 0;
-    switch (which) {
-    case 0: btn = g_hBtnTelnet;     id = IDC_TELNET_BTN_TELNET;   break;
-    case 1: btn = g_hBtnFingerNews; id = IDC_TELNET_BTN_FINGER_N; break;
-    case 2: btn = g_hBtnFingerWx;   id = IDC_TELNET_BTN_FINGER_W; break;
-    case 3: btn = g_hBtnQotd;       id = IDC_TELNET_BTN_QOTD;     break;
-    default: return FALSE;
-    }
-    if (!btn || !IsWindowEnabled(btn)) return FALSE;
-    trigger_shortcut(id);
-    return TRUE;
 }
 
 BOOL telnet_module_has_unsaved(void)

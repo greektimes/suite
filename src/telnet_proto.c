@@ -77,6 +77,11 @@ struct TelnetProto {
     unsigned char sb_buf[256];
     int           sb_len;
 
+    /* Set when the server negotiates remote echo (WILL ECHO), cleared on
+     * WONT ECHO. Written on the rx thread, read on the UI thread; a plain
+     * int is fine for this one-bit hint. */
+    int           server_echo;
+
     /* Send-side serialization. */
     CRITICAL_SECTION send_lock;
 };
@@ -173,7 +178,7 @@ static int parse_chunk(TelnetProto *t,
         case IS_VERB: {
             unsigned char opt = b;
             if (t->verb == WILL_) {
-                if (opt == OPT_ECHO)      send_iac_2(t, DO_,   OPT_ECHO);
+                if (opt == OPT_ECHO)      { send_iac_2(t, DO_, OPT_ECHO); t->server_echo = 1; }
                 else if (opt == OPT_SGA)  send_iac_2(t, DO_,   OPT_SGA);
                 else                      send_iac_2(t, DONT_, opt);
             } else if (t->verb == DO_) {
@@ -189,6 +194,7 @@ static int parse_chunk(TelnetProto *t,
                     send_iac_2(t, WONT_, opt);
                 }
             } else if (t->verb == WONT_) {
+                if (opt == OPT_ECHO) t->server_echo = 0;
                 send_iac_2(t, DONT_, opt);
             } else if (t->verb == DONT_) {
                 send_iac_2(t, WONT_, opt);
@@ -408,6 +414,11 @@ int telnet_proto_send(TelnetProto *t, const void *buf, size_t len)
 
     free(esc);
     return rc;
+}
+
+int telnet_proto_server_echo(TelnetProto *t)
+{
+    return t ? t->server_echo : 0;
 }
 
 void telnet_proto_close(TelnetProto *t)

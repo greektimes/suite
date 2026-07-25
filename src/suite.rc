@@ -46,8 +46,8 @@
 306 RCDATA "../icons/Live-radio.png"
 
 1 VERSIONINFO
-FILEVERSION    0, 2, 0, 0
-PRODUCTVERSION 0, 2, 0, 0
+FILEVERSION    0, 3, 0, 0
+PRODUCTVERSION 0, 3, 0, 0
 FILEOS         VOS__WINDOWS32
 FILETYPE       VFT_APP
 FILESUBTYPE    0
@@ -58,12 +58,12 @@ BEGIN
         BEGIN
             VALUE "CompanyName",      "The Montreal Greek Times"
             VALUE "FileDescription",  "Montreal Greek Times Unicorn Suite"
-            VALUE "FileVersion",      "0.2.0-beta"
+            VALUE "FileVersion",      "0.3.0-beta"
             VALUE "InternalName",     "MGT_Unicorn_Suite"
             VALUE "LegalCopyright",   "Copyright (C) 2026 Dimitri Papadopoulos"
             VALUE "OriginalFilename", "MGT_Unicorn_Suite_x64.exe"
             VALUE "ProductName",      "MGT Unicorn Suite"
-            VALUE "ProductVersion",   "0.2.0-beta"
+            VALUE "ProductVersion",   "0.3.0-beta"
         END
     END
     BLOCK "VarFileInfo"

@@ -1,6 +1,6 @@
 # MGT Unicorn Suite
 
-[![download](https://img.shields.io/badge/download-v0.2.0--beta-blue)](https://github.com/greektimes/suite/releases) [![license](https://img.shields.io/badge/license-AGPL--3.0-blue)](https://github.com/greektimes/suite/blob/main/COPYING)
+[![download](https://img.shields.io/badge/download-v0.3.0--beta-blue)](https://github.com/greektimes/suite/releases) [![license](https://img.shields.io/badge/license-AGPL--3.0-blue)](https://github.com/greektimes/suite/blob/main/COPYING)
 
 The official Windows app of The Montreal Greek Times
 (greektimes.ca).
@@ -17,14 +17,15 @@ The official Windows app of The Montreal Greek Times
 For vintage internet enthusiasts, the app also includes a
 Retro Mode: a text-first client for the live retro access
 points of the MGT Unicorn server:
-- F1  Unicorn Desktop (Active Channel CDF over HTTP, retro.greektimes.ca)
-- F2  Retro Web Browser (HTTP and HTML via W3C libwww, home page retro.greektimes.ca)
-- F3  Gopher (RFC 1436, gopher.greektimes.ca)
-- F4  ARPANET FTP-Mail (RFC 765/691 mail over FTP, arpanet.greektimes.ca port 2121)
-- F5  WAIS Search (Z39.50-1988 via freeWAIS-sf, wais.greektimes.ca port 210)
-- F6  IRC (IRCv3 read-only view of #retro, irc.greektimes.ca port 6667)
-- F7  CU-SeeMe Live TV (CU-SeeMe over UDP, cu-seeme.greektv.ca port 7648)
-- F8  Terminal (Telnet RFC 854 with VT220 emulation, plus Finger RFC 1288 and QOTD RFC 865 shortcuts on F9-F12, telnet/finger/qotd.greektimes.ca)
+- Unicorn Desktop (Active Channel CDF over HTTP, retro.greektimes.ca)
+- Retro Web Browser (HTTP and HTML via W3C libwww, home page retro.greektimes.ca)
+- Gopher (RFC 1436, gopher.greektimes.ca)
+- ARPANET FTP-Mail (RFC 765/691 mail over FTP, arpanet.greektimes.ca port 2121)
+- WAIS Search (Z39.50-1988 via freeWAIS-sf, wais.greektimes.ca port 210)
+- Archie (Prospero/ARDP file search, archie.greektimes.ca port 1525; interactive telnet on port 2323)
+- IRC (IRCv3 read-only view of #retro, irc.greektimes.ca port 6667)
+- CU-SeeMe Live TV (CU-SeeMe over UDP, cu-seeme.greektv.ca port 7648)
+- Terminal (Telnet RFC 854 with VT220 emulation, plus Finger RFC 1288 and QOTD RFC 865 shortcuts, telnet/finger/qotd.greektimes.ca)
 
 ## Requirements
 

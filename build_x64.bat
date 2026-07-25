@@ -97,7 +97,7 @@ for %%f in (sockets_win win_stubs) do (
 )
 
 echo Compiling Suite shell and modules...
-for %%f in (suite_shell suite_fonts suite_branding suite_clipboard suite_logo audio_format_detect wav_parser tsp_metafile truespeech_decoder wais_module arpamail_module vt_term telnet_proto finger_proto qotd_proto telnet_module irc_client irc_module cuseeme_proto cuseeme_video cuseeme_deltamod cuseeme_mulaw cuseeme_idvi cuseeme_module player_service mode_toggle placeholder_module modern_mode livetv_module audio_meter_service radio_engine liveradio_module) do (
+for %%f in (suite_shell suite_fonts suite_branding suite_clipboard suite_logo audio_format_detect wav_parser tsp_metafile truespeech_decoder wais_module arpamail_module archie_ardp archie_module ftp_fetch vt_term telnet_proto finger_proto qotd_proto telnet_module irc_client irc_module cuseeme_proto cuseeme_video cuseeme_deltamod cuseeme_mulaw cuseeme_idvi cuseeme_module player_service mode_toggle placeholder_module modern_mode livetv_module audio_meter_service radio_engine liveradio_module) do (
     echo   %%f.c
     %CC% %CFLAGS_SUITE% -c -o src\%%f.o src\%%f.c
     if errorlevel 1 exit /b 1
@@ -173,6 +173,7 @@ echo Linking %TARGET%...
     src\suite_shell.o src\suite_fonts.o src\suite_branding.o ^
     src\suite_clipboard.o src\suite_logo.o ^
     src\wais_module.o src\arpamail_module.o src\web_module.o ^
+    src\archie_ardp.o src\archie_module.o src\ftp_fetch.o ^
     src\web_module_cdf.o ^
     src\activedesktop_module.o ^
     src\audio_service.o src\audio_format_detect.o ^
