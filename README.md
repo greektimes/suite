@@ -114,6 +114,72 @@ directory.
 
 ---
 
+## Code signing policy
+
+Windows release binaries of the Montreal Greek Times Unicorn Suite are
+signed to confirm their origin and integrity.
+
+Free code signing provided by SignPath.io, certificate by SignPath Foundation.
+
+### What is signed
+
+The Windows installer package (`MGT_Unicorn_Suite_<version>.msi`) and the
+application executable it installs. Signed binaries are published on this
+repository's Releases page and mirrored, byte for byte with identical hashes,
+on the project's own distribution endpoint at `apps.greektimes.ca`.
+
+### Build and signing process
+
+Release binaries are built only from this public repository by GitHub Actions
+on GitHub-hosted runners; the workflow is `.github/workflows/build-msi.yml`.
+Only that automated build is submitted for signing. A binary built on a
+developer machine is never signed. SignPath verifies, for every release, that
+the signed binary is an automated build of the source in this repository, and
+the signing certificate's private key is held by SignPath on hardware security
+modules. This project does not possess it.
+
+### Team roles
+
+This is a single-maintainer project. Dimitri Papadopoulos (GitHub:
+Dimitri-Papadopoulos), publisher of The Montreal Greek Times, is the sole
+Author, Reviewer, and Approver, and is the only person with write or release
+authority over this repository. Because the build scripts and CI configuration
+determine the signed output, changes to those files are treated as
+security-relevant and reviewed as source.
+
+### Privacy statement
+
+The Suite is a client for The Montreal Greek Times' own services. It contains
+no analytics, telemetry, crash reporting, or usage tracking of any kind, and it
+transmits no personal or machine-identifying information to any server.
+
+On startup it makes one automatic network request: an update check to
+`https://apps.greektimes.ca/unicorn-suite/manifest.json` over HTTPS, throttled
+to at most once every 24 hours and disableable in settings. The request carries
+nothing beyond the plain GET; any update it offers is downloaded only over HTTPS
+and installed only if its SHA-256 matches the signed manifest.
+
+Every other connection happens only when you choose it, by playing a stream,
+opening a tab, or connecting a retro-protocol client. Through all of its own
+default code paths the Suite contacts only servers operated by The Montreal
+Greek Times and Montreal Greek TV, under `greektimes.ca`, `greektv.ca`, and
+`greekradio.ca`: live TV and radio, the newspaper reader, and the historical
+protocol services (Gopher, Telnet, WAIS, Archie, IRC, CU-SeeMe, ARPANET
+FTP-Mail, RIPscrip, Finger, QOTD, and FTP).
+
+Two honest exceptions. First, the Website and Newspaper tabs use Microsoft's
+WebView2, a full browser control that loads real web pages and will fetch
+whatever third-party resources those pages embed; WebView2 is a Microsoft
+component with its own update and data behaviour, and stores its data locally
+under your user profile. Second, the retro-protocol clients and the retro web
+browser have editable address fields, so if you enter a third-party host, the
+Suite will connect to it, at your direction.
+
+No data leaves your machine without either your action or the update check
+described above.
+
+---
+
 ## Credits
 
 The protocol authors and the projects this is built on are named in
