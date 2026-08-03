@@ -23,7 +23,13 @@ setlocal EnableDelayedExpansion
 
 set HERE=%~dp0
 set ROOT=%HERE%..
-set CC=C:\msys64\ucrt64\bin\gcc.exe
+@REM 2026-08-03 CI portability, same reasoning as in build_x64.bat: the
+@REM caller may point MSYS2_UCRT64 at a non-Z840 MSYS2. gcc is used here
+@REM only as the C preprocessor that reads the version back out of
+@REM src\suite_version.h, but it must be the SAME compiler, so the two
+@REM scripts resolve it the same way.
+if not defined MSYS2_UCRT64 set MSYS2_UCRT64=C:\msys64\ucrt64
+set CC=%MSYS2_UCRT64%\bin\gcc.exe
 set WIX=wix
 set PAYLOAD=%HERE%payload
 set OUTDIR=%HERE%out
@@ -109,8 +115,29 @@ if exist "%PAYLOAD%" rmdir /s /q "%PAYLOAD%"
 mkdir "%PAYLOAD%"
 mkdir "%PAYLOAD%\LICENSES"
 
+@REM 2026-08-03 WebView2Loader.dll, resolved rather than assumed.
+@REM
+@REM The Z840 working tree keeps a copy of the loader at the repository
+@REM root, next to the exe it sits beside once installed. That root copy
+@REM is NOT in the repository: .gitignore's *.dll-adjacent rules never
+@REM covered it and it was simply never added. What IS tracked is the
+@REM vendored SDK's own copy under third_party, and the two are byte
+@REM identical (verified 2026-08-03).
+@REM
+@REM So: prefer the root copy when it is there, which keeps the Z840
+@REM build taking exactly the file it always took, and fall back to the
+@REM tracked SDK copy, which is what a clean checkout has. Without this
+@REM the MSI cannot be built from a fresh clone at all.
+set WV2LOADER=%ROOT%\WebView2Loader.dll
+if not exist "%WV2LOADER%" set WV2LOADER=%ROOT%\third_party\webview2\build\native\x64\WebView2Loader.dll
+if not exist "%WV2LOADER%" (
+    echo ERROR: WebView2Loader.dll not found at the repository root or in
+    echo        third_party\webview2\build\native\x64.
+    exit /b 1
+)
+
 copy /y "%ROOT%\MGT_Unicorn_Suite_x64.exe" "%PAYLOAD%\" >nul || exit /b 1
-copy /y "%ROOT%\WebView2Loader.dll"        "%PAYLOAD%\" >nul || exit /b 1
+copy /y "%WV2LOADER%" "%PAYLOAD%\WebView2Loader.dll"    >nul || exit /b 1
 copy /y "%ROOT%\README.TXT"                "%PAYLOAD%\README.TXT"  >nul || exit /b 1
 copy /y "%ROOT%\COPYING"                   "%PAYLOAD%\LICENSE.TXT" >nul || exit /b 1
 copy /y "%ROOT%\THIRD-PARTY-NOTICES.md"    "%PAYLOAD%\NOTICES.TXT" >nul || exit /b 1

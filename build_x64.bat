@@ -13,8 +13,21 @@
 @echo off
 setlocal EnableDelayedExpansion
 
-set CC=C:\msys64\ucrt64\bin\gcc.exe
-set WINDRES=C:\msys64\ucrt64\bin\windres.exe
+@REM 2026-08-03 CI portability. The UCRT64 toolchain lives at
+@REM C:\msys64\ucrt64 on the Z840, but a GitHub-hosted runner installs
+@REM MSYS2 somewhere under the runner's temp directory. MSYS2_UCRT64
+@REM lets the caller say where it is; unset, it falls back to the Z840
+@REM path, so a local build is byte-for-byte the same command line it
+@REM has always been.
+if not defined MSYS2_UCRT64 set MSYS2_UCRT64=C:\msys64\ucrt64
+set CC=%MSYS2_UCRT64%\bin\gcc.exe
+set WINDRES=%MSYS2_UCRT64%\bin\windres.exe
+
+if not exist "%CC%" (
+    echo ERROR: gcc not found at %CC%
+    echo Set MSYS2_UCRT64 to the ucrt64 directory of your MSYS2 install.
+    exit /b 1
+)
 
 set CFLAGS_WAIS=-std=gnu89 -fcommon -fpermissive -O2 -fstack-protector-strong -D_WIN32 -DTELL_USER -DTCPIP -Isrc -Isrc\wais
 set CFLAGS_LIBWWW=-std=gnu89 -fcommon -fpermissive -O2 ^

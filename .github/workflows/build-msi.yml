@@ -1,0 +1,134 @@
+# build-msi.yml - build the UNSIGNED MGT Unicorn Suite MSI in the cloud.
+#
+# Part of the Montreal Greek Times Unicorn Suite.
+# Copyright (C) 2026 Dimitri Papadopoulos and The Montreal Greek Times
+# Licensed under the GNU Affero General Public License v3.0 or later.
+#
+# WHY THIS EXISTS
+#
+# The SignPath Foundation free OSS programme will only sign artifacts
+# that were built by GitHub Actions on a GITHUB-HOSTED runner, because
+# that is what lets SignPath verify the origin of the binary against
+# this repository automatically. So the release build has to be able to
+# run here, not only on the Z840. This workflow is that proof.
+#
+# NOTHING IS SIGNED HERE. There is no SignPath step, no certificate and
+# no secret. Signing is a later, separate phase.
+#
+# ONE SOURCE OF BUILD TRUTH. This workflow does not reimplement the
+# build. It installs the toolchain and then calls the same two scripts
+# the Z840 calls, build_x64.bat and installer\build_msi.bat, in the same
+# order. If those scripts change, this workflow follows for free.
+#
+# The scripts locate the toolchain through MSYS2_UCRT64 and MAGICK,
+# both of which fall back to the Z840 paths when unset.
+
+name: Build MSI (unsigned)
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - 'ci/**'
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    # GitHub-hosted, not self-hosted. Required by SignPath later, and
+    # free for public repositories.
+    runs-on: windows-latest
+
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v7
+
+      # The UCRT64 toolchain. gcc pulls binutils in, but windres is
+      # named explicitly because build_x64.bat invokes it directly and a
+      # missing windres would only surface at the resource step.
+      - name: Set up MSYS2 UCRT64
+        id: msys2
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: UCRT64
+          update: false
+          release: true
+          install: >-
+            mingw-w64-ucrt-x86_64-gcc
+            mingw-w64-ucrt-x86_64-binutils
+
+      # build_x64.bat and build_msi.bat are cmd scripts that call
+      # gcc.exe by Windows path; they do not need an MSYS2 shell, only
+      # this directory.
+      - name: Point the build scripts at this MSYS2
+        shell: pwsh
+        run: |
+          $ucrt = Join-Path '${{ steps.msys2.outputs.msys2-location }}' 'ucrt64'
+          if (-not (Test-Path (Join-Path $ucrt 'bin\gcc.exe'))) {
+            throw "gcc.exe not found under $ucrt"
+          }
+          "MSYS2_UCRT64=$ucrt" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          & (Join-Path $ucrt 'bin\gcc.exe') --version
+          & (Join-Path $ucrt 'bin\windres.exe') --version
+
+      # tools\gen_icons.py and tools\gen_installer_art.py shell out to
+      # ImageMagick 7 for the Lanczos reductions and the .ico packing.
+      # Both already read the MAGICK environment variable, so no script
+      # change is needed, only a value.
+      - name: Install ImageMagick 7
+        shell: pwsh
+        run: |
+          choco install imagemagick --no-progress --yes
+          "MAGICK=magick" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+
+      - name: Verify ImageMagick and Python
+        shell: pwsh
+        run: |
+          magick --version
+          python --version
+
+      # WiX 5.0.2 as a dotnet global tool, pinned to exactly what
+      # installer\MGTUnicornSuite.wxs was authored against, with the two
+      # extensions it references pinned to match.
+      - name: Set up WiX 5.0.2
+        shell: pwsh
+        run: |
+          dotnet --version
+          dotnet tool install --global wix --version 5.0.2
+          "$env:USERPROFILE\.dotnet\tools" | Out-File -FilePath $env:GITHUB_PATH -Append -Encoding utf8
+          $wix = "$env:USERPROFILE\.dotnet\tools\wix.exe"
+          & $wix --version
+          & $wix extension add --global WixToolset.UI.wixext/5.0.2
+          & $wix extension add --global WixToolset.Util.wixext/5.0.2
+          & $wix extension list --global
+
+      - name: Build the executable
+        shell: cmd
+        run: build_x64.bat
+
+      - name: Build the MSI
+        shell: cmd
+        run: installer\build_msi.bat
+
+      # Report what came out, so a failed or surprising build is legible
+      # from the run log alone without downloading anything.
+      - name: Report the MSI identity
+        shell: pwsh
+        run: |
+          $msi = Get-ChildItem installer\out\*.msi
+          foreach ($m in $msi) {
+            Write-Host ("name   : " + $m.Name)
+            Write-Host ("bytes  : " + $m.Length)
+            Write-Host ("sha256 : " + (Get-FileHash $m.FullName -Algorithm SHA256).Hash.ToLower())
+          }
+
+      - name: Upload the unsigned MSI
+        uses: actions/upload-artifact@v7
+        with:
+          name: MGT-Unicorn-Suite-MSI-unsigned
+          path: |
+            installer/out/*.msi
+            installer/out/*.msi.sha256
+          if-no-files-found: error
+          retention-days: 14
