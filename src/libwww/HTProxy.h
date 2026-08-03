@@ -22,9 +22,9 @@ for backward compatibility there is a function that reads the environment
 variables at start up. Note that there is a difference between a proxy and
 a gateway - the difference is the way the URL is set up in the
 RequestLine of the HTTP request. If the original, full URL looks
-like "http://www.w3.org/test.html" then the result will for
-a proxy is "http://www.w3.org/test.html" and a gateway
-"/www.w3.org/test.html"
+like "http://www[.]w3[.]org/test.html" then the result will for
+a proxy is "http://www[.]w3[.]org/test.html" and a gateway
+"/www[.]w3[.]org/test.html"
 
 The module is implemented by HTProxy.c, and it is
 a part of the  W3C Sample Code
@@ -47,7 +47,7 @@ extern "C" {
 
 A proxy server is registered with a corresponding access method, for example
 http, ftp etc. The `proxy' parameter should be a fully
-valid name, like http://proxy.w3.org:8001 but domain name is
+valid name, like http://proxy[.]w3[.]org:8001 but domain name is
 not required. If an entry exists for this access then delete it and use the
 new one.
 */
@@ -65,7 +65,7 @@ HT_POSIX_REGEX flag, see the installation
 instructions. If you call this function without having compiled with
 the HT_POSIX_REGEX flag then you will essentially get the non-regex
 version.&nbsp;The name of the proxy should be a fully valid URL, like
-"http://proxy.w3.org:8001". Returns YES if OK, else NO
+"http://proxy[.]w3[.]org:8001". Returns YES if OK, else NO
 */
 
 extern BOOL HTProxy_addRegex (const char * regex,
@@ -94,7 +94,7 @@ particular access method . When registering a noproxy item, you
 can specify a specific port for this access method in which case it isvalid
 only for requests to this port. If `port' is '0' then it applies to all ports
 and if `access' is NULL then it applies to to all access methods. Examples
-of host names are w3.org and www.close.com
+of host names are w3[.]org and www.close.com
 */
 
 extern BOOL HTNoProxy_add	(const char * host, const char * access,
@@ -161,7 +161,7 @@ extern char * HTProxy_find	(const char * url);
 
 A gateway is registered with a corresponding access method, for example
 http, ftp etc. The `gate' parameter should be a fully valid
-name, like http://gateway.w3.org:8001 but domain name is not
+name, like http://gateway[.]w3[.]org:8001 but domain name is not
 required. If an entry exists for this access then delete it and use the new
 one.
 */

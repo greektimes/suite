@@ -233,7 +233,7 @@ PRIVATE BOOL remove_AllHostnames (HTList * list)
 **	-----------
 **	Registers a proxy as the server to contact for a specific
 **	access method. `proxy' should be a fully valid name, like
-**	"http://proxy.w3.org:8001" but domain name is not required.
+**	"http://proxy[.]w3[.]org:8001" but domain name is not required.
 **	If an entry exists for this access then delete it and use the 
 **	ne one. Returns YES if OK, else NO
 */
@@ -260,7 +260,7 @@ PUBLIC BOOL HTProxy_add (const char * access, const char * proxy)
 **	----------------
 **	Registers a proxy as the server to contact for any URL matching the
 **	regular expression. `proxy' should be a fully valid name, like
-**	"http://proxy.w3.org:8001".
+**	"http://proxy[.]w3[.]org:8001".
 **	If an entry exists for this access then delete it and use the 
 **	new one. Returns YES if OK, else NO
 */
@@ -316,7 +316,7 @@ PUBLIC BOOL HTProxy_deleteAll (void)
 **	-------------
 **	Registers a gateway as the server to contact for a specific
 **	access method. `gateway' should be a fully valid name, like
-**	"http://gateway.w3.org:8001" but domain name is not required.
+**	"http://gateway[.]w3[.]org:8001" but domain name is not required.
 **	If an entry exists for this access then delete it and use the 
 **	ne one. Returns YES if OK, else NO
 */
@@ -347,7 +347,7 @@ PUBLIC BOOL HTGateway_deleteAll (void)
 **	it applies to all ports and if `access' is NULL then it applies to
 **	to all access methods.
 **
-**	Examples:	w3.org
+**	Examples:	w3[.]org
 **			www.close.com
 */
 PUBLIC BOOL HTNoProxy_add (const char * host, const char * access,
