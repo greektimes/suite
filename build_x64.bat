@@ -40,6 +40,13 @@ set CFLAGS_WEB=-O2 -fstack-protector-strong -D_WIN32 -D_WINDOWS ^
 set CFLAGS_WV2=-O2 -fstack-protector-strong -D_WIN32 -D_WINDOWS ^
     -Isrc -Ithird_party\webview2\build\native\include
 set CFLAGS_NEWS=-O2 -fstack-protector-strong -D_WIN32 -Isrc
+@REM 2026-08-02 Phase 4 Zmodem receive: the vendored mbzm core lives in
+@REM third_party\mbzm and is reached only by src\zmodem_recv.c, so the
+@REM include path is confined to those translation units. mbzm is MIT
+@REM (Ross Bamford); its two Synchronet GPL CRC files were removed and
+@REM replaced with public-domain ones, see third_party\mbzm\MGT-CHANGES.md.
+set CFLAGS_ZMODEM=-O2 -fstack-protector-strong -D_WIN32 -Isrc ^
+    -Ithird_party\mbzm\include
 @REM 2026-06-16 Radio engine dispatch: radio_engine.c uses the Microsoft
 @REM AAC Decoder MFT (IMFTransform IIDs live in mfuuid) plus WASAPI
 @REM (CLSID_MMDeviceEnumerator / IAudioClient, defined locally via
@@ -48,7 +55,10 @@ set CFLAGS_NEWS=-O2 -fstack-protector-strong -D_WIN32 -Isrc
 @REM 2026-06-16 Website module dispatch: website_module.c uses
 @REM InternetCrackUrlW (wininet) for the domain-lock URL parse and
 @REM ShellExecuteW (shell32) to open outbound links in the system browser.
-set LDFLAGS=-lws2_32 -lcomctl32 -lcomdlg32 -lgdi32 -lgdiplus -lmsimg32 -lole32 -loleaut32 -luuid -lmfuuid -lwinmm -lmfplat -lmf -ld3d11 -ldxgi -lwinhttp -lwininet -lshell32 -lwinspool -static -mwindows -Wl,--dynamicbase -Wl,--nxcompat -Wl,--high-entropy-va -lssp
+@REM 2026-08-02 Updater: -lbcrypt for the CNG SHA-256 that verifies a
+@REM downloaded installer (src\suite_sha256.c). In-box on every
+@REM supported Windows; no vendored crypto.
+set LDFLAGS=-lbcrypt -lws2_32 -lcomctl32 -lcomdlg32 -lgdi32 -lgdiplus -lmsimg32 -lole32 -loleaut32 -luuid -lmfuuid -lwinmm -lmfplat -lmf -ld3d11 -ldxgi -lwinhttp -lwininet -lshell32 -lwinspool -static -mwindows -Wl,--dynamicbase -Wl,--nxcompat -Wl,--high-entropy-va -lssp
 
 set TARGET=MGT_Unicorn_Suite_x64.exe
 
@@ -97,11 +107,22 @@ for %%f in (sockets_win win_stubs) do (
 )
 
 echo Compiling Suite shell and modules...
-for %%f in (suite_shell suite_fonts suite_branding suite_clipboard suite_logo audio_format_detect wav_parser tsp_metafile truespeech_decoder wais_module arpamail_module archie_ardp archie_module ftp_fetch vt_term telnet_proto finger_proto qotd_proto telnet_module irc_client irc_module cuseeme_proto cuseeme_video cuseeme_deltamod cuseeme_mulaw cuseeme_idvi cuseeme_module player_service mode_toggle placeholder_module modern_mode livetv_module audio_meter_service radio_engine liveradio_module) do (
+for %%f in (suite_shell suite_fonts suite_branding suite_clipboard suite_logo http_fetch suite_sha256 suite_update audio_format_detect wav_parser tsp_metafile truespeech_decoder wais_module arpamail_module archie_ardp archie_module ftp_fetch vt_term telnet_proto finger_proto qotd_proto telnet_module irc_client irc_module rip_ega rip_parser rip_text rip_button rip_hershey_data rip_font8x8_data ripscrip_module cuseeme_proto cuseeme_video cuseeme_deltamod cuseeme_mulaw cuseeme_idvi cuseeme_module player_service mode_toggle placeholder_module modern_mode livetv_module audio_meter_service radio_engine liveradio_module) do (
     echo   %%f.c
     %CC% %CFLAGS_SUITE% -c -o src\%%f.o src\%%f.c
     if errorlevel 1 exit /b 1
 )
+echo Compiling the vendored Zmodem receive core (mbzm, MIT)...
+for %%f in (zserial zheaders znumbers crc16 crc32) do (
+    echo   third_party\mbzm\%%f.c
+    %CC% %CFLAGS_ZMODEM% -c -o third_party\mbzm\%%f.o third_party\mbzm\%%f.c
+    if errorlevel 1 exit /b 1
+)
+
+echo   zmodem_recv.c (Suite Zmodem receive session, uses CFLAGS_ZMODEM)
+%CC% %CFLAGS_ZMODEM% -c -o src\zmodem_recv.o src\zmodem_recv.c
+if errorlevel 1 exit /b 1
+
 echo   web_module.c (libwww-driven, uses CFLAGS_WEB)
 %CC% %CFLAGS_WEB% -c -o src\web_module.o src\web_module.c
 if errorlevel 1 exit /b 1
@@ -172,6 +193,7 @@ echo Linking %TARGET%...
     src\sockets_win.o src\win_stubs.o ^
     src\suite_shell.o src\suite_fonts.o src\suite_branding.o ^
     src\suite_clipboard.o src\suite_logo.o ^
+    src\http_fetch.o src\suite_sha256.o src\suite_update.o ^
     src\wais_module.o src\arpamail_module.o src\web_module.o ^
     src\archie_ardp.o src\archie_module.o src\ftp_fetch.o ^
     src\web_module_cdf.o ^
@@ -183,6 +205,13 @@ echo Linking %TARGET%...
     src\vt_term.o src\telnet_proto.o src\finger_proto.o src\qotd_proto.o ^
     src\telnet_module.o ^
     src\irc_client.o src\irc_module.o ^
+    src\rip_ega.o src\rip_parser.o src\rip_text.o src\rip_button.o ^
+    src\rip_hershey_data.o src\rip_font8x8_data.o ^
+    src\ripscrip_module.o ^
+    src\zmodem_recv.o ^
+    third_party\mbzm\zserial.o third_party\mbzm\zheaders.o ^
+    third_party\mbzm\znumbers.o ^
+    third_party\mbzm\crc16.o third_party\mbzm\crc32.o ^
     src\cuseeme_proto.o src\cuseeme_video.o src\cuseeme_deltamod.o ^
     src\cuseeme_mulaw.o src\cuseeme_idvi.o src\cuseeme_module.o ^
     src\player_service.o src\mode_toggle.o ^

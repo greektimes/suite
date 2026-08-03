@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  MGTUnicornSuite.wxl - wizard text overrides.
+
+  Part of the Montreal Greek Times Unicorn Suite.
+  Copyright (C) 2026 Dimitri Papadopoulos and The Montreal Greek Times
+  Licensed under the GNU Affero General Public License v3.0 or later.
+
+  ==================================================================
+  THE TWO NAMES, AND HOW THE SPLIT IS DONE WITHOUT A HACK
+  ==================================================================
+
+  We want two different names in two different places:
+
+      wizard windows            "The Montreal Greek Times Unicorn Suite"
+      Apps and features         "Greek Times"
+      both shortcuts            "Greek Times"
+
+  Windows Installer normally derives BOTH from ProductName, so this
+  looks like it needs a trick. It does not. The mechanism is documented
+  and supported, and it runs the other way round from what you might
+  expect:
+
+    1. THERE IS NO ARPDISPLAYNAME PROPERTY. Checked against Microsoft's
+       Windows Installer property reference, which lists every ARP
+       property that exists: ARPCOMMENTS, ARPCONTACT, ARPHELPLINK,
+       ARPINSTALLLOCATION, ARPNOMODIFY, ARPNOREMOVE, ARPNOREPAIR,
+       ARPPRODUCTICON, ARPREADME, ARPSIZE, ARPSYSTEMCOMPONENT,
+       ARPURLINFOABOUT, ARPURLUPDATEINFO, ARPAUTHORIZEDCDFPREFIX,
+       ARPHELPTELEPHONE. No DisplayName. The Uninstall key's DisplayName
+       is ProductName and nothing else can change it without writing
+       behind Windows Installer's back, which we will not do.
+
+       Therefore ProductName is the SHORT name. That settles Apps and
+       features, correctly and with no registry hack.
+
+    2. EVERY WixUI STRING IS OVERRIDABLE. In WiX 5.0.2's own
+       src/ext/UI/wixlib/WixUI_en-us.wxl, all 561 strings carry
+       Overridable="yes", and the wizard's text is built from them using
+       the [ProductName] placeholder. Supplying our own values here, via
+       the -loc switch, replaces them.
+
+       Therefore the wizard says the LONG name, because these strings
+       spell it out instead of substituting [ProductName].
+
+  So the wizard reads long, the uninstall entry reads short, and both
+  come from src/suite_version.h through installer/build_msi.bat.
+
+  The long name is not typed in this file either. [LongName] is an MSI
+  property authored in the .wxs from the preprocessor variable, and
+  Windows Installer substitutes it at run time exactly as it substitutes
+  [ProductName]: the Dialog table's Title column and the Control table's
+  Text column are both Formatted. That is the same mechanism WiX's own
+  strings use, so it needs nothing new to work.
+
+  ==================================================================
+  WHICH NAME GOES WHERE: THE TRUNCATION RULE
+  ==================================================================
+
+  Long is preferred and short is the exception. The exception is decided
+  by the CONTROL GEOMETRY in WiX 5.0.2's own dialog sources, not by eye:
+
+    control                       W x H    behaviour
+    ...........................   ......   ............................
+    LicenseAgreementDlg Title     200x15   SINGLE LINE, narrowest of all
+    CustomizeDlg Title            210x15   SINGLE LINE
+    VerifyReadyDlg *Title         300x15   SINGLE LINE
+    ProgressDlg Title*            330x15   SINGLE LINE
+    MaintenanceTypeDlg Title      340x15   SINGLE LINE
+    WelcomeDlg Title              220x60   wraps, 3 lines of room
+    WelcomeDlg Description        220x60   wraps
+    ExitDialog Title              220x60   wraps
+    MaintenanceWelcomeDlg both    220x60   wraps
+    VerifyReadyDlg *Text          320x80   wraps
+    ProgressDlg Text*             330x35   wraps
+
+  A Height of 15 is one line and it clips; anything 20 or more wraps.
+  So: SINGLE-LINE BANNER TITLES TAKE THE SHORT NAME, EVERYTHING THAT
+  WRAPS TAKES THE LONG ONE. The License page title at 200 units is the
+  narrowest control in the whole wizard, which is exactly the one that
+  was observed truncating.
+
+  Most of the single-line titles need no override at all: the stock
+  strings already say [ProductName], and ProductName is now the short
+  name, so they come out right on their own. Overriding them with the
+  long name is what broke them, and those overrides have been removed.
+
+  ==================================================================
+  THE ARTICLE PROBLEM
+  ==================================================================
+
+  The long name begins with "The". The stock strings say "the
+  [ProductName]", which with a long name substituted reads "the The
+  Montreal Greek Times Unicorn Suite". Every such string is reworded
+  here to put the name after a preposition instead: "Setup Wizard for
+  [LongName]". Nothing in the wizard says "the The".
+
+  Only the strings on the paths this package can actually reach are
+  overridden. WixUI_FeatureTree uses WelcomeDlg, LicenseAgreementDlg,
+  CustomizeDlg, VerifyReadyDlg, ProgressDlg and ExitDialog, plus the
+  maintenance and error dialogs that any package can hit.
+-->
+<WixLocalization xmlns="http://wixtoolset.org/schemas/v4/wxl"
+                 Culture="en-US">
+
+  <!-- ============ window captions ============ -->
+  <String Id="WelcomeDlg_Title"            Overridable="yes" Value="[LongName] Setup" />
+  <String Id="LicenseAgreementDlg_Title"   Overridable="yes" Value="[LongName] Setup" />
+  <String Id="CustomizeDlg_Title"          Overridable="yes" Value="[LongName] Setup" />
+  <String Id="VerifyReadyDlg_Title"        Overridable="yes" Value="[LongName] Setup" />
+  <String Id="ProgressDlg_Title"           Overridable="yes" Value="[LongName] Setup" />
+  <String Id="ExitDialog_Title"            Overridable="yes" Value="[LongName] Setup" />
+  <String Id="MaintenanceWelcomeDlg_Title" Overridable="yes" Value="[LongName] Setup" />
+  <String Id="MaintenanceTypeDlg_Title"    Overridable="yes" Value="[LongName] Setup" />
+  <String Id="CancelDlg_Title"             Overridable="yes" Value="[LongName] Setup" />
+  <String Id="ErrorDlg_Title"              Overridable="yes" Value="[LongName] Setup" />
+  <String Id="FatalError_Title"            Overridable="yes" Value="[LongName] Setup" />
+  <String Id="UserExit_Title"              Overridable="yes" Value="[LongName] Setup" />
+  <String Id="FilesInUse_Title"            Overridable="yes" Value="[LongName] Setup" />
+  <String Id="MsiRMFilesInUse_Title"       Overridable="yes" Value="[LongName] Setup" />
+  <String Id="PrepareDlg_Title"            Overridable="yes" Value="[LongName] Setup" />
+  <String Id="ResumeDlg_Title"             Overridable="yes" Value="[LongName] Setup" />
+  <String Id="OutOfDiskDlg_Title"          Overridable="yes" Value="[LongName] Setup" />
+  <String Id="OutOfRbDiskDlg_Title"        Overridable="yes" Value="[LongName] Setup" />
+  <String Id="WaitForCostingDlg_Title"     Overridable="yes" Value="[LongName] Setup" />
+  <String Id="DiskCostDlg_Title"           Overridable="yes" Value="[LongName] Setup" />
+  <String Id="BrowseDlg_Title"             Overridable="yes" Value="[LongName] Setup" />
+  <String Id="InvalidDirDlg_Title"         Overridable="yes" Value="[LongName] Setup" />
+
+  <!-- ============ welcome ============ -->
+  <String Id="WelcomeDlgTitle" Overridable="yes"
+          Value="{\WixUI_Font_Bigger}Welcome to the Setup Wizard for [LongName]" />
+  <String Id="WelcomeDlgDescription" Overridable="yes"
+          Value="The Setup Wizard will install [LongName] on your computer. Click Next to continue or Cancel to exit the Setup Wizard." />
+
+  <!-- ============ licence ============ -->
+  <!-- 200x15, the narrowest control in the wizard. Short name, and no
+       "Please read the" preamble either: both together are what ran off
+       the end. -->
+  <String Id="LicenseAgreementDlgTitle" Overridable="yes"
+          Value="{\WixUI_Font_Title}[ProductName] License Agreement" />
+
+  <!-- ============ ready ============ -->
+  <String Id="VerifyReadyDlgRemoveText" Overridable="yes"
+          Value="Click Remove to remove [LongName] from your computer. Click Back to review or change any of your installation settings. Click Cancel to exit the wizard." />
+  <String Id="VerifyReadyDlgRepairText" Overridable="yes"
+          Value="Click Repair to repair the installation of [LongName]. Click Back to review or change any of your installation settings. Click Cancel to exit the wizard." />
+
+  <!-- ============ progress ============ -->
+  <String Id="ProgressDlgTextInstalling" Overridable="yes"
+          Value="Please wait while the Setup Wizard installs [LongName]." />
+  <String Id="ProgressDlgTextChanging" Overridable="yes"
+          Value="Please wait while the Setup Wizard changes [LongName]." />
+  <String Id="ProgressDlgTextRepairing" Overridable="yes"
+          Value="Please wait while the Setup Wizard repairs [LongName]." />
+  <String Id="ProgressDlgTextRemoving" Overridable="yes"
+          Value="Please wait while the Setup Wizard removes [LongName]." />
+
+  <!-- ============ finish, cancel, failure ============ -->
+  <String Id="ExitDialogTitle" Overridable="yes"
+          Value="{\WixUI_Font_Bigger}Completed the Setup Wizard for [LongName]" />
+  <String Id="CancelDlgText" Overridable="yes"
+          Value="Are you sure you want to cancel [LongName] installation?" />
+  <String Id="FatalErrorTitle" Overridable="yes"
+          Value="{\WixUI_Font_Bigger}Setup for [LongName] ended prematurely" />
+  <String Id="FatalErrorDescription1" Overridable="yes"
+          Value="[LongName] Setup Wizard ended prematurely because of an error. Your system has not been modified. To install this program at a later time, run Setup Wizard again." />
+  <String Id="UserExitTitle" Overridable="yes"
+          Value="{\WixUI_Font_Bigger}Setup for [LongName] was interrupted" />
+  <String Id="UserExitDescription1" Overridable="yes"
+          Value="[LongName] setup was interrupted. Your system has not been modified. To install this program at a later time, please run the installation again." />
+
+  <!-- ============ maintenance ============ -->
+  <String Id="MaintenanceWelcomeDlgTitle" Overridable="yes"
+          Value="{\WixUI_Font_Bigger}Welcome to the Setup Wizard for [LongName]" />
+  <String Id="MaintenanceWelcomeDlgDescription" Overridable="yes"
+          Value="The Setup Wizard allows you to change the way [LongName] features are installed on your computer or to remove it from your computer. Click Next to continue or Cancel to exit the Setup Wizard." />
+  <String Id="MaintenanceTypeDlgRemoveText" Overridable="yes"
+          Value="Removes [LongName] from your computer." />
+  <String Id="MaintenanceTypeDlgChangeDisabledText" Overridable="yes"
+          Value="[LongName] has no independently selectable features." />
+
+</WixLocalization>

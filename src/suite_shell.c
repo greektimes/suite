@@ -17,6 +17,7 @@
 #include "cuseeme_module.h"
 #include "irc_module.h"
 #include "archie_module.h"
+#include "ripscrip_module.h"
 #include "mode_toggle.h"
 #include "modern_mode.h"
 #include "livetv_module.h"
@@ -82,30 +83,45 @@
 #define ID_BTN_CUSEEME  SUITE_ID_BTN_CUSEEME
 #define ID_BTN_IRC      SUITE_ID_BTN_IRC
 #define ID_BTN_ARCHIE   SUITE_ID_BTN_ARCHIE
+#define ID_BTN_RIPSCRIP SUITE_ID_BTN_RIPSCRIP
 #define ID_MODULE_COUNT 9
 
 #define ID_HELP_ABOUT   200   /* Help > About (mouse / Alt+H mnemonic) */
+#define ID_HELP_UPDATE  201   /* Help > Check for Updates              */
+
+/* The automatic update check does not run at WM_CREATE. It runs a few
+ * seconds after the window is up, on a one-shot timer, so it is not
+ * competing for the network with whatever the default module fetches
+ * first, and so a slow DNS lookup can never sit in front of the first
+ * paint. suite_update_startup_check itself is non-blocking and applies
+ * the user setting and the 24 hour throttle before it touches the
+ * network at all. */
+#define ID_TIMER_UPDATE_CHECK  0xB201
+#define UPDATE_CHECK_DELAY_MS  4000
 
 #define ID_STATUS       300
 
 /* Module table. One entry per module, in left-to-right button order.
- * Tab order (2026-07-24: native Archie inserted immediately after WAIS):
- *   Unicorn Desktop, Retro Web Browser, Gopher, ARPANET FTP-Mail,
+ * Tab order (2026-08-01: Unicorn Desktop retired, RIPscrip in its slot):
+ *   RIPscrip, Retro Web Browser, Gopher, ARPANET FTP-Mail,
  *   WAIS, Archie, IRC, CU-SeeMe Live TV, Terminal.
  * The bar renders in table order. Each module keeps its stable command
  * id; the F1-F12 accelerators were retired (the retro section ran out of
- * function keys), so tab switching is now mouse-only. Unicorn Desktop
- * stays at index 0 so it is default-active on launch (switch_to_module(0)
- * at WM_CREATE).
+ * function keys), so tab switching is now mouse-only. Index 0 is
+ * default-active on launch (switch_to_module(0) at WM_CREATE).
+ *
+ * The Unicorn Desktop tab was withdrawn on 2026-08-01 and its slot given
+ * to the RIPscrip renderer. activedesktop_module.c is untouched and
+ * still builds, so restoring that tab means restoring this one row.
  *
  * Button labels are one or two centered rows (paint_button splits on an
  * embedded '\n'); single-row labels (WAIS, Archie, Gopher, IRC, Terminal)
  * sit vertically centered so they align with the two-row tabs. */
 static const suite_module_t g_modules[ID_MODULE_COUNT] = {
-    { "Unicorn\nDesktop",          ID_BTN_DESKTOP,
-      activedesktop_module_activate, activedesktop_module_deactivate,
-      activedesktop_module_resize,   activedesktop_module_on_command,
-      activedesktop_module_has_unsaved },
+    { "RIPscrip",                  ID_BTN_RIPSCRIP,
+      ripscrip_module_activate, ripscrip_module_deactivate,
+      ripscrip_module_resize,   ripscrip_module_on_command,
+      ripscrip_module_has_unsaved },
     { "Retro Web\nBrowser",        ID_BTN_WEB,
       web_module_activate, web_module_deactivate,
       web_module_resize, web_module_on_command,
@@ -152,7 +168,7 @@ static int  g_active_module = -1;
  * the selection per mode so toggling back and forth preserves context. */
 static int  g_mode               = MODE_MODERN;
 static int  g_last_modern_tab    = MM_TAB_WEBSITE;  /* launch default: Website */
-static int  g_last_retro_module  = 0;            /* index 0 = Unicorn Desktop */
+static int  g_last_retro_module  = 0;            /* index 0 = RIPscrip */
 static HWND g_hwndModernMode     = NULL;
 static HWND g_hwndModeToggle     = NULL;
 static HWND g_hwndLiveTV         = NULL;         /* handed to modern_mode tab 0 */
@@ -467,6 +483,8 @@ static HMENU build_menu(void)
 {
     HMENU root = CreateMenu();
     HMENU help = CreatePopupMenu();
+    AppendMenuA(help, MF_STRING, ID_HELP_UPDATE, "Check for &Updates...");
+    AppendMenuA(help, MF_SEPARATOR, 0, NULL);
     AppendMenuA(help, MF_STRING, ID_HELP_ABOUT, "&About");
     /* MF_RIGHTJUSTIFY: pushes the Help menu to the right edge of the menu bar.
      * No \tF12 hint on the top-level item because Windows does not render
@@ -632,7 +650,13 @@ static void switch_to_mode(int new_mode)
             ShowWindow(g_hwndModernMode, SW_SHOW);
             modern_mode_set_active_tab(g_hwndModernMode, g_last_modern_tab);
         }
-        SetWindowTextA(g_hwndMain, SUITE_APP_TITLE " - Modern");
+        /* The caption is the same string in both modes now. It used to
+         * gain a " - Modern" or " - Retro" suffix here, which pushed the
+         * version out of the title the instant the first mode change
+         * happened: you saw it at launch and never again. The mode is
+         * already obvious from the toggle. These calls are kept so the
+         * caption is restored if anything ever changes it. */
+        SetWindowTextA(g_hwndMain, SUITE_WINDOW_TITLE);
     } else {
         /* Hide Modern chrome. */
         if (g_hwndModernMode) ShowWindow(g_hwndModernMode, SW_HIDE);
@@ -645,7 +669,7 @@ static void switch_to_mode(int new_mode)
          * top-left artifact -- a black box for the content window (its
          * WM_ERASEBKGND fills g_hBrushBlack) and the "Ready" status. We
          * position them while hidden, then reveal them in place. */
-        SetWindowTextA(g_hwndMain, SUITE_APP_TITLE " - Retro");
+        SetWindowTextA(g_hwndMain, SUITE_WINDOW_TITLE);
         if (g_active_module < 0) {
             /* First entry into Retro from a Modern-default startup:
              * activate the remembered default module (no on_deactivate
@@ -789,7 +813,7 @@ static LRESULT CALLBACK SuiteWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
         }
 
         layout_children(hwnd);
-        SetWindowTextA(hwnd, SUITE_APP_TITLE " - Modern");
+        SetWindowTextA(hwnd, SUITE_WINDOW_TITLE);
         return 0;
     }
 
@@ -899,7 +923,7 @@ static LRESULT CALLBACK SuiteWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
     case WM_COMMAND: {
         int wmId = LOWORD(wParam);
         switch (wmId) {
-        case ID_BTN_DESKTOP:
+        case ID_BTN_RIPSCRIP:
         case ID_BTN_WEB:
         case ID_BTN_GOPHER:
         case ID_BTN_ARPAMAIL:
@@ -919,14 +943,33 @@ static LRESULT CALLBACK SuiteWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
         case ID_HELP_ABOUT:
             suite_about_show(hwnd);
             return 0;
+        /* Outside the MODE_MODERN gate above on purpose: the updater is
+         * about the application, not about either mode's content, and
+         * has to be reachable from both. */
+        case ID_HELP_UPDATE:
+            suite_update_check(hwnd);
+            return 0;
         }
         break;
     }
+
+    case WM_TIMER:
+        if (wParam == ID_TIMER_UPDATE_CHECK) {
+            KillTimer(hwnd, ID_TIMER_UPDATE_CHECK);
+            suite_update_startup_check(hwnd);
+            return 0;
+        }
+        break;
 
     case WM_DESTROY:
         if (g_hFontTitleLabel) { DeleteObject(g_hFontTitleLabel); g_hFontTitleLabel = NULL; }
         PostQuitMessage(0);
         return 0;
+
+    default:
+        /* The updater's worker threads post their results back here. */
+        if (suite_update_on_message(hwnd, msg, wParam, lParam)) return 0;
+        break;
     }
 
     return DefWindowProcA(hwnd, msg, wParam, lParam);
@@ -1040,7 +1083,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrev, LPSTR lpCmdLine, int nShow)
     g_hwndMain = CreateWindowExA(
         WS_EX_CONTROLPARENT,
         SUITE_WINDOW_CLASS,
-        SUITE_APP_TITLE " " SUITE_VERSION_STRING,
+        SUITE_WINDOW_TITLE,
         WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN,
         CW_USEDEFAULT, CW_USEDEFAULT, 980, 770,
         NULL, build_menu(), hInst, NULL);
@@ -1053,6 +1096,9 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrev, LPSTR lpCmdLine, int nShow)
 
     ShowWindow(g_hwndMain, nShow);
     UpdateWindow(g_hwndMain);
+
+    /* Arm the automatic update check. See ID_TIMER_UPDATE_CHECK. */
+    SetTimer(g_hwndMain, ID_TIMER_UPDATE_CHECK, UPDATE_CHECK_DELAY_MS, NULL);
 
     while (GetMessageA(&msg, NULL, 0, 0)) {
         HWND focused;
@@ -1086,6 +1132,8 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrev, LPSTR lpCmdLine, int nShow)
         DispatchMessageA(&msg);
     }
 
+    suite_update_shutdown();
+    ripscrip_module_shutdown();
     irc_module_shutdown();
     cuseeme_module_shutdown();
     telnet_module_shutdown();

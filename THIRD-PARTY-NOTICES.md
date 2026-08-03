@@ -104,16 +104,24 @@ files are rendered here as "(C)".
 
 ## Microsoft WebView2 SDK
 
-- Upstream origin: the Microsoft.Web.WebView2 NuGet package, preserved
-  in `third_party/webview2/`. The Suite redistributes
-  `WebView2Loader.dll`, which Microsoft's distribution documentation
-  explicitly intends to ship with applications.
-- Copyright, as found in `third_party/webview2/LICENSE.txt`:
+- Upstream origin: the Microsoft.Web.WebView2 NuGet package, unpacked
+  into `third_party/webview2/` in the working tree. The Suite
+  redistributes `WebView2Loader.dll`, which Microsoft's distribution
+  documentation explicitly intends to ship with applications.
+- What is in this REPOSITORY: only the two public SDK headers the build
+  actually reads, `third_party/webview2/build/native/include/WebView2.h`
+  and `WebView2EnvironmentOptions.h`. The rest of the unpacked package,
+  including its `LICENSE.txt` and `NOTICE.txt`, is present in a working
+  tree that has run the SDK unpack step but is deliberately NOT tracked;
+  `.gitignore` excludes the package because the static libraries,
+  runtimes, managed assemblies and tools are tens of megabytes the build
+  never reads. Obtain them with the package from
+  https://www.nuget.org/packages/Microsoft.Web.WebView2 .
+- Copyright, as found in the package's `LICENSE.txt`:
   - `Copyright (C) Microsoft Corporation. All rights reserved.`
-- License: the Microsoft WebView2 SDK license, included verbatim as
-  `third_party/webview2/LICENSE.txt`, with the accompanying
-  `third_party/webview2/NOTICE.txt` (third-party notices for material
-  incorporated by Microsoft) also included verbatim.
+- License: the Microsoft WebView2 SDK license, distributed with the
+  NuGet package as `LICENSE.txt`, together with its `NOTICE.txt`
+  (third-party notices for material Microsoft incorporated).
 - Used for: hosting the WebView2 browser control in the Newspaper and
   Website modules. The WebView2 Runtime itself is a system component
   installed on the user's machine and is not part of this repository.
@@ -141,6 +149,143 @@ files are rendered here as "(C)".
 - License text: https://www.gnu.org/licenses/gcc-exception-3.1.html
 - Used for: compiler runtime support and stack-smashing protection
   (`-fstack-protector-strong`, `-lssp`) in the shipped binary.
+
+## Hershey Fonts (RIPscrip stroked fonts 1 to 10)
+
+- Upstream origin: the public-domain Hershey vector font distribution,
+  in the `.jhf` format. The glyphs are the digitised vector letterforms
+  developed by **Dr. Allen Vincent Hershey at the United States National
+  Bureau of Standards** (now the National Institute of Standards and
+  Technology) in the 1960s. As work produced at a US federal agency the
+  vector data is in the **public domain**, and it has been distributed
+  as such for decades, most widely through the Usenet `.jhf` collection.
+- What is in this repository: not the upstream `.jhf` files themselves
+  but generated C tables, `src/rip_hershey_data.c`, produced from them
+  by `tools/gen_hershey.py`. The generator reads the `.jhf` coordinate
+  pairs and emits them as a compact `signed char` array; it performs no
+  redrawing and adds no glyph of its own, so the shipped outlines are
+  the public-domain Hershey outlines and nothing else.
+- License: **public domain**. The distribution asks that the following
+  two acknowledgements accompany the font data, and they are reproduced
+  here verbatim for that purpose. They are also carried in the header of
+  `src/rip_hershey_data.c` and shown in the Suite's About box.
+
+  - The Hershey Fonts were originally created by Dr. A. V. Hershey
+    while working at the U. S. National Bureau of Standards.
+  - The format of the Font data in this distribution was originally
+    created by James Hurt, Cognition, Inc., 900 Technology Park Drive,
+    Billerica, MA 01821.
+
+  Note that the second acknowledgement credits the `.jhf` FILE FORMAT,
+  not the letterforms. Neither acknowledgement is a copyright claim and
+  neither imposes a condition beyond attribution.
+- Used for: the RIPscrip stroked fonts, font numbers 1 to 10, in the
+  RIPscrip tab. RIPscrip names the same font families the Hershey set
+  provides, and the 1.54 specification's own font metric tables size
+  them at exactly the Hershey natural capital height.
+- **WHY PUBLIC-DOMAIN GLYPHS SPECIFICALLY.** A RIPscrip terminal of the
+  period drew its stroked fonts from Borland's BGI `.CHR` stroke files,
+  which are proprietary and are not redistributable. Sourcing the
+  letterforms from the public-domain Hershey set is what lets this
+  renderer produce the correct stroked output with **no proprietary font
+  data of any kind in the tree or in the shipped binary**. It is the
+  same discipline applied to the Zmodem CRC files described below:
+  where a component would have brought in a licence the Suite cannot
+  ship, it was replaced with one that carries no such condition rather
+  than worked around.
+- Not used: no Borland `.CHR` font file, no BGI font data, and no
+  TeleGrafix font asset is read, converted, embedded or redistributed by
+  this project.
+
+## font8x8 (RIPscrip default font 0)
+
+- Upstream origin: `font8x8` by Daniel Hepper, itself based on the
+  public-domain 8x8 VGA font by Marcel Sondaas. Vendored as a generated
+  C table in `src/rip_font8x8_data.c`, produced by
+  `tools/gen_font8x8.py`.
+- License: public domain.
+- Used for: the RIPscrip default 8x8 bitmap font (font number 0) in the
+  RIPscrip tab.
+
+## RIPscrip protocol
+
+- RIPscrip is a trademark of TeleGrafix Communications, Inc. This
+  project implements the published RIPscrip 1.54 protocol
+  specification, pinned at `docs/ripscrip-ref/RIPSCRIP-1.54.DOC`. No
+  TeleGrafix code or asset is used or redistributed.
+
+## mbzm (Zmodem receive core)
+
+- Upstream origin: mbzm, https://github.com/roscopeco/mbzm, a small
+  receive-only Zmodem implementation written against the published
+  ZMODEM protocol specification. Vendored in `third_party/mbzm/`.
+- Copyright, as found in the source headers and `LICENSE`:
+  - `Copyright (c)2020 Ross Bamford`
+- License: MIT.
+- License text: `licenses/LICENSE.mbzm.txt` (a copy of the upstream
+  `LICENSE`, which is also kept in-tree at `third_party/mbzm/LICENSE`).
+- Used for: the Zmodem protocol primitives (header encode and decode,
+  ZDLE escaping, data subpacket reads) behind the RIPscrip tab's file
+  download. The session driver, the Win32 threading, the file naming
+  policy and every security decision are Suite code in
+  `src/zmodem_recv.[ch]` and are not part of the vendored core.
+- MODIFICATIONS, and this one matters for licensing: upstream mbzm
+  vendors its two CRC files (`crc16.c`, `crc32.c` and their headers)
+  from Synchronet's smblib, which is **GNU GPL v2 or later**, not MIT.
+  The Suite ships no copyleft code, so all four files were REMOVED from
+  the vendored tree and replaced with implementations written from the
+  polynomial definitions alone (CRC-16/XMODEM, poly 0x1021, init 0; and
+  CRC-32, reflected poly 0xEDB88320, init 0xFFFFFFFF, final complement).
+  The replacements build their tables at run time, are placed in the
+  public domain by their author, and are checked against the standard
+  "123456789" vectors. Nothing from Synchronet, lrzsz or Omen
+  Technology is present in the binary or in this repository.
+  See `licenses/LICENSE.mbzm-smblib-REMOVED.txt` for the full account
+  and `third_party/mbzm/MGT-CHANGES.md` for the vendoring notes.
+  Upstream's `rz.c` example driver was also dropped.
+
+## WiX Toolset (installer build tooling, and installer UI resources)
+
+- Upstream origin: the WiX Toolset, https://wixtoolset.org/, source at
+  https://github.com/wixtoolset/wix. Installed as a .NET global tool and
+  pinned; it is not vendored in this repository.
+- Versions pinned and used to build the MSI:
+  - `wix` **5.0.2**
+  - `WixToolset.UI.wixext` **5.0.2**
+  - `WixToolset.Util.wixext` **5.0.2**
+- Copyright, as found in the project's `LICENSE.TXT` at tag `v5.0.2` and
+  in the NuGet metadata of all three packages:
+  - `Copyright (c) .NET Foundation and contributors. All rights reserved.`
+- License: the **Microsoft Reciprocal License (MS-RL)**. Stated in
+  `LICENSE.TXT` at tag `v5.0.2` ("This software is released under the
+  Microsoft Reciprocal License (MS-RL)") and declared as the SPDX
+  expression `MS-RL` in the `wix`, `WixToolset.UI.wixext` and
+  `WixToolset.Util.wixext` 5.0.2 packages. License text:
+  http://opensource.org/licenses/ms-rl
+- Used for: building `MGT_Unicorn_Suite_<version>.msi` from
+  `installer/MGTUnicornSuite.wxs`. See `installer/build_msi.bat`.
+- **IT IS NOT ONLY BUILD TOOLING.** WiX also contributes content that is
+  redistributed inside the shipped MSI, so it is credited here rather
+  than treated as a build-time-only dependency the way ImageMagick and
+  the MSYS2 toolchain are:
+  - two compiled custom-action libraries embedded as MSI binary
+    streams, `Wix4UtilCA_X64` (from the Util extension, used for the
+    close-the-running-app prompt) and `WixUiCa_X64` (from the UI
+    extension);
+  - the `WixUI_FeatureTree` dialog set, which is WiX-authored content
+    compiled into the package's Dialog and Control tables;
+  - four small stock UI images kept as WiX shipped them:
+    `WixUI_Ico_Exclam`, `WixUI_Ico_Info`, `WixUI_Bmp_New` and
+    `WixUI_Bmp_Up`.
+- Not from WiX: the two large wizard images, `WixUI_Bmp_Dialog` and
+  `WixUI_Bmp_Banner`, are Montreal Greek Times artwork generated by
+  `tools/gen_installer_art.py` and they replace WiX's stock bitmaps in
+  the built package. The wizard text is likewise overridden from
+  `installer/MGTUnicornSuite.wxl`.
+- Scope note: MS-RL is a reciprocal license that applies per file. It
+  covers the WiX files listed above, which are redistributed unmodified
+  inside the installer. It does not reach the application itself:
+  `MGT_Unicorn_Suite_x64.exe` contains no WiX code.
 
 ## Windows in-box system libraries
 

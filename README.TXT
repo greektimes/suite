@@ -1,5 +1,5 @@
-MGT UNICORN SUITE v0.3.1-beta
-The Montreal Greek Times, July 2026
+MGT UNICORN SUITE v0.4.0-beta
+The Montreal Greek Times, August 2026
 
 The MGT Unicorn Suite is the official Windows app of The Montreal
 Greek Times (greektimes.ca). Watch Montreal Greek TV live, listen
@@ -14,10 +14,12 @@ and a Web 1.0 browser built on W3C libwww (retro.greektimes.ca),
 Gopher (RFC 1436), ARPANET FTP-Mail (RFC 765/691), WAIS search
 over Z39.50-1988 via freeWAIS-sf, a read-only IRC view of the
 #retro channel, CU-SeeMe live television over UDP, and a VT220
-Telnet terminal with Finger and QOTD shortcuts. New in this
-release is Archie search of the anonymous FTP archive over the
-original Prospero/ARDP protocol (archie.greektimes.ca), plus the
-interactive telnet interface on port 2323.
+Telnet terminal with Finger and QOTD shortcuts, and Archie
+search of the anonymous FTP archive over the original
+Prospero/ARDP protocol (archie.greektimes.ca), plus the
+interactive telnet interface on port 2323. New in this release
+is a native RIPscrip renderer for the retro graphics pages
+(ripscrip.greektimes.ca) and Zmodem file downloads over Telnet.
 
 REQUIREMENTS
 
@@ -28,8 +30,12 @@ Bootstrapper before first launch.
 
 INSTALL
 
-Unzip anywhere. Keep WebView2Loader.dll beside the executable.
-Run MGT_Unicorn_Suite_x64.exe.
+Run the installer, MGT_Unicorn_Suite_0.4.0.msi. It installs to
+Program Files for all users and adds a Start Menu entry; the
+desktop shortcut is optional and can be turned off during setup.
+Uninstall from Settings, Apps and features.
+
+The app checks for its own updates: Help, then Update.
 
 LICENSE
 
@@ -40,7 +46,7 @@ the LICENSES directory.
 
 The complete Corresponding Source for this exact build is at
 
-  https://github.com/greektimes/suite/releases/tag/v0.3.1-beta
+  https://github.com/greektimes/suite/releases/tag/v0.4.0-beta
 
 Build it with build_x64.bat under MSYS2 UCRT64.
 

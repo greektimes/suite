@@ -1,0 +1,344 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  MGTUnicornSuite.wxs - the MSI for the Montreal Greek Times Unicorn Suite.
+
+  Part of the Montreal Greek Times Unicorn Suite.
+  Copyright (C) 2026 Dimitri Papadopoulos and The Montreal Greek Times
+  Licensed under the GNU Affero General Public License v3.0 or later.
+  See /COPYING for the full license text.
+
+  Built by installer\build_msi.bat, which is the only supported way to
+  build it. That script stages the payload and passes the version in, so
+  NOTHING about the version is typed here: it comes from
+  src\suite_version.h through the C preprocessor. See the comment on
+  Version below.
+
+  WiX Toolset 5.0.2, installed as a dotnet global tool and pinned. The
+  UI and Util extensions are also pinned at 5.0.2.
+
+  WHAT GETS INSTALLED
+
+    <ProgramFiles64>\MGT Unicorn Suite\
+        MGT_Unicorn_Suite_x64.exe
+        WebView2Loader.dll          MUST sit beside the exe: the loader
+                                    LoadLibraryEx's it from the exe's own
+                                    directory first
+        README.TXT LICENSE.TXT NOTICES.TXT CREDITS.TXT
+        LICENSES\*.txt
+
+  There is NO font component and no image component. The two Ubuntu Mono
+  faces, the application icon, both logos and all seven channel icons are
+  RCDATA and ICON resources inside the exe (see src\suite.rc); the fonts
+  are loaded with AddFontMemResourceEx and never touch %WINDIR%\Fonts.
+
+  NOTHING IS WRITTEN INTO THE INSTALL DIRECTORY AT RUNTIME, which is what
+  makes a per-machine install into Program Files safe. WebView2 keeps its
+  user data in %LOCALAPPDATA%\MGT Unicorn Suite\WebView2, by design, and
+  that is deliberately NOT removed on uninstall: it is user data.
+-->
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
+     xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui"
+     xmlns:util="http://wixtoolset.org/schemas/v4/wxs/util">
+
+  <?ifndef Version?>
+    <?error Version was not supplied. Build with installer\build_msi.bat, which reads it from src\suite_version.h.?>
+  <?endif?>
+  <?ifndef PayloadDir?>
+    <?error PayloadDir was not supplied. Build with installer\build_msi.bat.?>
+  <?endif?>
+
+  <!--
+    UpgradeCode is the identity of the PRODUCT LINE and must never
+    change: it is what lets a 0.5.0 MSI recognise a 0.4.0 install as its
+    own and upgrade it in place. Generated once, 2026-08-02.
+
+    ProductCode is deliberately left as "*" (auto-generated per build).
+    A changing ProductCode plus a fixed UpgradeCode plus MajorUpgrade is
+    the combination that produces a real major upgrade rather than a
+    side-by-side second entry in Apps and features.
+  -->
+  <Package
+      Name="$(ShortName)"
+      Manufacturer="The Montreal Greek Times"
+      Version="$(Version)"
+      UpgradeCode="B4E2A7C1-3F58-4D0A-9C21-7E5D6A8B0F13"
+      Scope="perMachine"
+      Compressed="yes"
+      InstallerVersion="500">
+
+    <SummaryInformation
+        Description="$(LongName)"
+        Manufacturer="The Montreal Greek Times" />
+
+    <!--
+      The LONG name, as an MSI property so the wizard's Formatted text
+      can substitute it at run time. ProductName is deliberately the
+      SHORT name because that, and only that, is what Apps and features
+      displays; see installer\MGTUnicornSuite.wxl for the full reasoning
+      and the verification behind it. Neither name is typed here: both
+      come from src\suite_version.h via build_msi.bat.
+    -->
+    <Property Id="LongName" Value="$(LongName)" />
+
+    <!--
+      Schedule afterInstallValidate so the old version is removed before
+      the new files are laid down. DowngradeErrorMessage stops a 0.4.0
+      MSI from quietly clobbering a 0.5.0 install.
+    -->
+    <MajorUpgrade
+        Schedule="afterInstallValidate"
+        AllowSameVersionUpgrades="yes"
+        DowngradeErrorMessage="A newer version of [ProductName] is already installed. Uninstall it first if you really want to go back." />
+
+    <MediaTemplate EmbedCab="yes" />
+
+    <!--
+      SHUTTING THE APP DOWN BEFORE INSTALLING.
+
+      The Suite has no WM_QUERYENDSESSION handler, so the Restart Manager
+      cannot ask it to close politely and would eventually force-kill it.
+      What the app DOES do cleanly is WM_CLOSE: DefWindowProc turns that
+      into DestroyWindow, WM_DESTROY posts the quit message, and the
+      shutdown tail in WinMain joins the module worker threads.
+
+      So we send WM_CLOSE ourselves, to the main window class, and give
+      it long enough for that tail to finish. The tail can genuinely take
+      several seconds: telnet_proto_close waits up to 3 s per handle and
+      the Zmodem receiver up to 5 s if a download is in flight.
+
+      TerminateProcess is deliberately NOT set. Without it the app is
+      asked to close and never force-killed, so an install attempted
+      during a live file transfer stops with a clear prompt instead of
+      taking the transfer down with it. PromptToContinue lets the user
+      close the Suite by hand and carry on.
+
+      The in-app updater closes the Suite itself before launching the
+      MSI, so this matters most for a manual install over a running copy,
+      and for the second copy that can exist because the Suite has no
+      single-instance mutex.
+    -->
+    <util:CloseApplication
+        Id="CloseSuite"
+        Target="MGT_Unicorn_Suite_x64.exe"
+        Description="The MGT Unicorn Suite is running and must be closed before it can be updated."
+        CloseMessage="yes"
+        RebootPrompt="no"
+        PromptToContinue="yes"
+        Timeout="15" />
+
+    <!-- Windows 10 22H2 (build 19045) or later, matching README.TXT. -->
+    <Launch
+        Condition="Installed OR (VersionNT &gt;= 603)"
+        Message="[ProductName] requires Windows 10 22H2 or later." />
+
+    <Feature Id="Main"
+             Title="$(ShortName)"
+             Description="The application, its documentation and a Start Menu shortcut."
+             Level="1"
+             AllowAbsent="no"
+             ConfigurableDirectory="INSTALLFOLDER">
+      <ComponentGroupRef Id="AppFiles" />
+      <ComponentGroupRef Id="DocFiles" />
+      <ComponentRef Id="StartMenuShortcut" />
+      <ComponentRef Id="RegistryEntries" />
+    </Feature>
+
+    <!--
+      The optional desktop shortcut, as its own feature so the feature
+      tree in the UI is where the user turns it off. Level 1 means it is
+      selected by default; a silent install can drop it with
+      ADDLOCAL=Main or REMOVE=DesktopShortcut.
+    -->
+    <Feature Id="DesktopShortcut"
+             Title="Desktop shortcut"
+             Description="Put a shortcut to the Suite on the desktop."
+             Level="1">
+      <ComponentRef Id="DesktopShortcutComponent" />
+    </Feature>
+
+    <!--
+      WixUI_FeatureTree: welcome, licence, feature tree, install,
+      finish. The feature tree is what makes the desktop shortcut
+      optional without a hand-written dialog. The install location can
+      still be redirected from the command line with
+      INSTALLFOLDER="D:\Somewhere".
+    -->
+    <ui:WixUI Id="WixUI_FeatureTree" InstallDirectory="INSTALLFOLDER" />
+
+    <!--
+      Wizard artwork. These four WixVariable ids are the ones WiX 5.0.2
+      actually declares, checked in its own
+      src/ext/UI/wixlib/Common.wxs, which binds each Binary to
+      !(wix.WixUIBannerBmp), !(wix.WixUIDialogBmp),
+      !(wix.WixUIExclamationIco), !(wix.WixUIInfoIco),
+      !(wix.WixUINewIco) and !(wix.WixUIUpIco); WixUILicenseRtf is bound
+      the same way in LicenseAgreementDlg.wxs.
+
+      The two sizes are not guesses either: WiX's own dlgbmp.bmp measures
+      493x312 and bannrbmp.bmp measures 493x58.
+
+      Replacing these two matters for more than taste. Left alone, the
+      package ships the WiX Toolset's OWN branding, a maroon panel with
+      the WiX wheel and the WiX logo badge, on our installer.
+
+      The exclamation, info, new and up icons are deliberately NOT
+      overridden. They are semantic, a warning glyph and folder buttons,
+      and a floppy disk in place of a warning triangle would be worse
+      than the stock.
+    -->
+    <WixVariable Id="WixUIDialogBmp"  Value="$(ArtDir)\dialog.bmp" />
+    <WixVariable Id="WixUIBannerBmp"  Value="$(ArtDir)\banner.bmp" />
+    <WixVariable Id="WixUILicenseRtf" Value="$(PayloadDir)\LICENSE.rtf" />
+
+    <!--
+      The Apps and features icon is the BRAND mark, not the retro setup
+      icon: it stands for the installed application, which is what that
+      list is about. It is taken from assets\mgt_suite.ico rather than
+      from the exe so the exact multi-resolution file is used.
+    -->
+    <Icon Id="AppIcon.ico" SourceFile="$(IconDir)\mgt_suite.ico" />
+    <Property Id="ARPPRODUCTICON" Value="AppIcon.ico" />
+    <Property Id="ARPURLINFOABOUT" Value="https://www.greektimes.ca" />
+    <Property Id="ARPNOREPAIR" Value="1" />
+    <Property Id="ARPHELPLINK" Value="https://www.greektimes.ca" />
+
+    <!--
+      C:\Program Files\Greek Times\Suite\
+
+      A "Greek Times" parent so the standalone apps that follow, WAIS and
+      the rest, can sit beside this one as \Greek Times\WAIS rather than
+      scattering vendor-named folders across Program Files.
+
+      The UpgradeCode is UNCHANGED, so an existing install is still
+      recognised as the same product line. Note what a major upgrade then
+      does: it removes the old product before laying down the new one, so
+      a machine carrying the earlier 0.4.0 at
+      C:\Program Files\MGT Unicorn Suite\ gets that directory removed
+      and the files installed at the new path. The application is moved,
+      not duplicated. Per-user data in %LOCALAPPDATA% is untouched.
+    -->
+    <StandardDirectory Id="ProgramFiles64Folder">
+      <Directory Id="GREEKTIMESFOLDER" Name="Greek Times">
+        <Directory Id="INSTALLFOLDER" Name="Suite">
+          <Directory Id="LICENSESFOLDER" Name="LICENSES" />
+        </Directory>
+      </Directory>
+    </StandardDirectory>
+    <StandardDirectory Id="ProgramMenuFolder" />
+    <StandardDirectory Id="DesktopFolder" />
+  </Package>
+
+  <Fragment>
+    <!--
+      The application itself. One component per file, each file its own
+      KeyPath, which is what lets a repair replace exactly what is
+      missing.
+    -->
+    <ComponentGroup Id="AppFiles" Directory="INSTALLFOLDER">
+      <Component Id="MainExecutable" Guid="A1C7F2D4-9B36-4E58-8A0C-5D2E7F1B4A60">
+        <File Id="SuiteExe"
+              Name="MGT_Unicorn_Suite_x64.exe"
+              Source="$(PayloadDir)\MGT_Unicorn_Suite_x64.exe"
+              KeyPath="yes" />
+      </Component>
+      <!--
+        The WebView2 loader. src\webview2_host_service.c resolves it with
+        LoadLibraryExA against the exe's own directory before falling
+        back to the search path, so it has to land here and nowhere else.
+        The WebView2 RUNTIME is a separate system component, in-box on
+        Windows 11; on Windows 10 the user installs the Evergreen
+        bootstrapper. Without it only Modern Mode is affected, so this
+        install does not hard-fail on its absence.
+      -->
+      <Component Id="WebView2Loader" Guid="C3B85E17-4A29-4F6D-B1E0-8C7A2D9F3054">
+        <File Id="WebView2LoaderDll"
+              Name="WebView2Loader.dll"
+              Source="$(PayloadDir)\WebView2Loader.dll"
+              KeyPath="yes" />
+      </Component>
+    </ComponentGroup>
+
+    <ComponentGroup Id="DocFiles">
+      <Component Id="Docs" Directory="INSTALLFOLDER"
+                 Guid="E7D14B92-6C03-4A85-9F72-1B8E5C0D6A47">
+        <File Id="ReadmeTxt"  Name="README.TXT"  Source="$(PayloadDir)\README.TXT" KeyPath="yes" />
+        <File Id="LicenseTxt" Name="LICENSE.TXT" Source="$(PayloadDir)\LICENSE.TXT" />
+        <File Id="NoticesTxt" Name="NOTICES.TXT" Source="$(PayloadDir)\NOTICES.TXT" />
+        <File Id="CreditsTxt" Name="CREDITS.TXT" Source="$(PayloadDir)\CREDITS.TXT" />
+      </Component>
+      <Component Id="LicenseTexts" Directory="LICENSESFOLDER"
+                 Guid="5A6F0C38-2E14-47B9-8D63-9C4B1E7A2F85">
+        <File Id="LicCnidr"  Name="CNIDR-1993.txt"                  Source="$(PayloadDir)\LICENSES\CNIDR-1993.txt" KeyPath="yes" />
+        <File Id="LicLgpl"   Name="LGPL-2.1.txt"                    Source="$(PayloadDir)\LICENSES\LGPL-2.1.txt" />
+        <File Id="LicW3C"    Name="W3C-Software-Notice.txt"         Source="$(PayloadDir)\LICENSES\W3C-Software-Notice.txt" />
+        <File Id="LicMbzm"   Name="LICENSE.mbzm.txt"                Source="$(PayloadDir)\LICENSES\LICENSE.mbzm.txt" />
+        <File Id="LicMbzmGp" Name="LICENSE.mbzm-smblib-REMOVED.txt" Source="$(PayloadDir)\LICENSES\LICENSE.mbzm-smblib-REMOVED.txt" />
+      </Component>
+    </ComponentGroup>
+
+    <!--
+      The shortcuts are labelled "Greek Times", not "MGT Unicorn Suite".
+      That is deliberate and operator-chosen: the Start Menu and the
+      desktop are where a reader looks for the paper, not for the
+      project's internal name. The product name in Apps and features,
+      the window title and the About box are unchanged.
+    -->
+    <Component Id="StartMenuShortcut" Directory="ProgramMenuFolder"
+               Guid="9F30D6B5-7C41-4E82-A5D9-3B6E0F8C1A27">
+      <Shortcut Id="StartMenuLink"
+                Name="Greek Times"
+                Description="Montreal Greek TV, Radio, the newspaper, and the retro internet"
+                Target="[INSTALLFOLDER]MGT_Unicorn_Suite_x64.exe"
+                WorkingDirectory="INSTALLFOLDER" />
+      <!--
+        A per-machine component whose only payload is a shortcut in a
+        per-user-visible folder still needs a KeyPath that uninstall can
+        find. HKLM here, not HKCU: the whole package is perMachine, and
+        an HKCU keypath in a perMachine package is the classic way to
+        make a component that never cleanly uninstalls.
+      -->
+      <RegistryValue Root="HKLM"
+                     Key="SOFTWARE\The Montreal Greek Times\MGT Unicorn Suite"
+                     Name="StartMenuShortcut" Type="integer" Value="1" KeyPath="yes" />
+    </Component>
+
+    <Component Id="DesktopShortcutComponent" Directory="DesktopFolder"
+               Guid="2D8C4A16-B053-4F79-8E1C-6A9D7B3F02E4">
+      <Shortcut Id="DesktopLink"
+                Name="Greek Times"
+                Description="Montreal Greek TV, Radio, the newspaper, and the retro internet"
+                Target="[INSTALLFOLDER]MGT_Unicorn_Suite_x64.exe"
+                WorkingDirectory="INSTALLFOLDER" />
+      <RegistryValue Root="HKLM"
+                     Key="SOFTWARE\The Montreal Greek Times\MGT Unicorn Suite"
+                     Name="DesktopShortcut" Type="integer" Value="1" KeyPath="yes" />
+    </Component>
+
+    <!--
+      THE INSTALLED-VERSION KEY. This is the contract between the MSI and
+      the in-app updater, and between the MSI and anything else that
+      wants to know what is installed.
+
+        HKLM\SOFTWARE\The Montreal Greek Times\MGT Unicorn Suite
+            Version      "0.4.0-beta"   the canonical string, suffix and all
+            MsiVersion   "0.4.0"        the numeric triple the MSI compares
+            InstallDir   "C:\Program Files\MGT Unicorn Suite\"
+
+      Version carries the pre-release suffix that ProductVersion cannot,
+      which is exactly why both are written.
+
+      This key is HKLM and therefore READ-ONLY to the running app: a
+      standard user cannot write under HKLM. The updater's own mutable
+      state ("last checked") lives in the matching HKCU key, which the
+      app creates for itself at runtime. See src\suite_update.c.
+    -->
+    <Component Id="RegistryEntries" Directory="INSTALLFOLDER"
+               Guid="7B1E9A45-0D62-4C38-93F5-4E8A6C2B17D9">
+      <RegistryKey Root="HKLM" Key="SOFTWARE\The Montreal Greek Times\MGT Unicorn Suite">
+        <RegistryValue Name="Version"    Type="string" Value="$(FullVersion)" KeyPath="yes" />
+        <RegistryValue Name="MsiVersion" Type="string" Value="$(Version)" />
+        <RegistryValue Name="InstallDir" Type="string" Value="[INSTALLFOLDER]" />
+      </RegistryKey>
+    </Component>
+  </Fragment>
+</Wix>

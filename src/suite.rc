@@ -9,6 +9,11 @@
 #include <winver.h>
 #include "suite_res.h"
 
+/* The version lives in exactly one place. windres runs the C
+ * preprocessor over this file and concatenates adjacent string
+ * literals, so the composed macros arrive as single strings. */
+#include "suite_version.h"
+
 /* Application icon (ID 1, loaded via MAKEINTRESOURCE(1)). Multi-resolution
  * .ico (16/32/48/64/128/256) generated from the generic CHWB logo with
  * ImageMagick + Lanczos resampling -- see docs/2026-06-27_LOGO_ASSETS.md
@@ -46,8 +51,8 @@
 306 RCDATA "../icons/Live-radio.png"
 
 1 VERSIONINFO
-FILEVERSION    0, 3, 1, 0
-PRODUCTVERSION 0, 3, 1, 0
+FILEVERSION    SUITE_VERSION_MAJOR, SUITE_VERSION_MINOR, SUITE_VERSION_PATCH, 0
+PRODUCTVERSION SUITE_VERSION_MAJOR, SUITE_VERSION_MINOR, SUITE_VERSION_PATCH, 0
 FILEOS         VOS__WINDOWS32
 FILETYPE       VFT_APP
 FILESUBTYPE    0
@@ -58,12 +63,12 @@ BEGIN
         BEGIN
             VALUE "CompanyName",      "The Montreal Greek Times"
             VALUE "FileDescription",  "Montreal Greek Times Unicorn Suite"
-            VALUE "FileVersion",      "0.3.1-beta"
+            VALUE "FileVersion",      SUITE_VERSION_STR
             VALUE "InternalName",     "MGT_Unicorn_Suite"
             VALUE "LegalCopyright",   "Copyright (C) 2026 Dimitri Papadopoulos"
             VALUE "OriginalFilename", "MGT_Unicorn_Suite_x64.exe"
             VALUE "ProductName",      "MGT Unicorn Suite"
-            VALUE "ProductVersion",   "0.3.1-beta"
+            VALUE "ProductVersion",   SUITE_VERSION_STR
         END
     END
     BLOCK "VarFileInfo"

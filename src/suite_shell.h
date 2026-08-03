@@ -16,8 +16,18 @@
 #endif
 #include <windows.h>
 
-#define SUITE_VERSION_STRING "v0.3.1-beta"
-#define SUITE_APP_TITLE      "Montreal Greek Times Unicorn Suite"
+#include "suite_version.h"
+
+/* The version is single-sourced in suite_version.h, which suite.rc and
+ * the MSI build read too. This alias is kept because the title bar and
+ * the About box have always spelled it this way. */
+#define SUITE_VERSION_STRING SUITE_VERSION_DISPLAY
+
+/* The display name. Both names and the composed window title live in
+ * suite_version.h so the application and the MSI read the same source.
+ * SUITE_APP_TITLE is the LONG name and is what message-box captions and
+ * the About dialog use. */
+#define SUITE_APP_TITLE      SUITE_APP_NAME_LONG
 
 /* Module descriptor: one row per protocol module. See BLUEPRINT section 3.3.
  * on_resize and on_command are optional (may be NULL).
@@ -44,7 +54,8 @@ typedef struct suite_module {
 #define SUITE_ID_BTN_WAIS     (SUITE_ID_BTN_BASE + 0)
 #define SUITE_ID_BTN_ARPAMAIL (SUITE_ID_BTN_BASE + 1)
 #define SUITE_ID_BTN_WEB      (SUITE_ID_BTN_BASE + 2)
-#define SUITE_ID_BTN_DESKTOP  (SUITE_ID_BTN_BASE + 3)
+#define SUITE_ID_BTN_DESKTOP  (SUITE_ID_BTN_BASE + 3)  /* retired 2026-08-01 */
+#define SUITE_ID_BTN_RIPSCRIP (SUITE_ID_BTN_BASE + 9)
 #define SUITE_ID_BTN_GOPHER   (SUITE_ID_BTN_BASE + 4)
 #define SUITE_ID_BTN_TELNET   (SUITE_ID_BTN_BASE + 5)
 #define SUITE_ID_BTN_CUSEEME  (SUITE_ID_BTN_BASE + 6)
@@ -91,6 +102,9 @@ void suite_fonts_cleanup(void);
 /* About dialog. */
 void suite_about_show(HWND parent);
 
+/* Help > Check for Updates. Implemented in suite_update.c. */
+#include "suite_update.h"
+
 /* Module entry points, implemented in <module>_module.c. */
 void wais_module_activate(HWND content);
 void wais_module_deactivate(HWND content);
@@ -111,7 +125,12 @@ BOOL web_module_on_command(HWND content, WPARAM wParam, LPARAM lParam);
 BOOL web_module_has_unsaved(void);
 
 /* Phase 6a: Active Desktop module skeleton (the Channel Bar / scene
- * / ticker arrive in Phase 6b per the Active Channel blueprint). */
+ * / ticker arrive in Phase 6b per the Active Channel blueprint).
+ *
+ * RETIRED 2026-08-01: the Unicorn Desktop tab was withdrawn and its slot
+ * given to the RIPscrip renderer. The translation unit still builds and
+ * these entry points still exist, so restoring the tab is a one-row
+ * change to g_modules in suite_shell.c; nothing else was removed. */
 void activedesktop_module_activate(HWND content);
 void activedesktop_module_deactivate(HWND content);
 void activedesktop_module_resize(HWND content, int w, int h);
@@ -146,6 +165,14 @@ void irc_module_deactivate(HWND content);
 void irc_module_resize(HWND content, int w, int h);
 BOOL irc_module_on_command(HWND content, WPARAM wParam, LPARAM lParam);
 BOOL irc_module_has_unsaved(void);
+
+/* RIPscrip 1.54 graphical terminal (native EGA renderer over the shared
+ * telnet transport). Took the retired Unicorn Desktop tab slot. */
+void ripscrip_module_activate(HWND content);
+void ripscrip_module_deactivate(HWND content);
+void ripscrip_module_resize(HWND content, int w, int h);
+BOOL ripscrip_module_on_command(HWND content, WPARAM wParam, LPARAM lParam);
+BOOL ripscrip_module_has_unsaved(void);
 
 /* Archie Search (native Prospero/ARDP client, tab immediately after WAIS). */
 void archie_module_activate(HWND content);

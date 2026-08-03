@@ -4,14 +4,21 @@ The official Windows app of The Montreal Greek Times. Watch Montreal Greek
 Television live, listen to Montreal Greek Radio, read the newspaper, and follow
 the news of the Greek community of Greater Montreal.
 
-[![download](https://img.shields.io/badge/download-v0.3.1--beta-blue)](https://github.com/greektimes/suite/releases)
+[![download](https://img.shields.io/badge/download-v0.4.0--beta-blue)](https://github.com/greektimes/suite/releases)
 [![license](https://img.shields.io/badge/license-AGPL--3.0-blue)](https://github.com/greektimes/suite/blob/main/COPYING)
 
 ---
 
 ## Status
 
-**v0.3.1-beta**, 25 July 2026. Beta: usable, and still changing.
+**v0.4.0-beta**, 3 August 2026. Beta: usable, and still changing.
+
+New in this release:
+
+- A **Windows installer (MSI)**, replacing the unzip-anywhere archive.
+- **Built-in updates**, so future versions arrive automatically.
+- A native **RIPscrip renderer** for the retro graphics pages.
+- **Zmodem file downloads** over Telnet.
 
 ---
 
@@ -32,12 +39,14 @@ Four things, on four tabs:
 | where | link |
 | --- | --- |
 | GitHub | https://github.com/greektimes/suite/releases |
-| Web | https://greektimes.ca/wp-content/uploads/2026/07/MGTSUITE.zip |
-| FTP | ftp://ftp.greektimes.ca/pub/suite/MGTSUITE.ZIP |
+| FTP | ftp://ftp.greektimes.ca/pub/suite/MGT_Unicorn_Suite_0.4.0.msi |
 | Gopher | gopher://gopher.greektimes.ca/1/software |
 
-Unzip anywhere. Keep `WebView2Loader.dll` next to `MGT_Unicorn_Suite_x64.exe`
-and run the executable. There is no installer.
+Run `MGT_Unicorn_Suite_0.4.0.msi`. It installs to Program Files for all users
+and adds a Start Menu entry; the desktop shortcut is optional and can be turned
+off during setup. Uninstall from Settings, Apps and features.
+
+The app checks for its own updates: **Help**, then **Update**.
 
 ---
 
@@ -70,7 +79,8 @@ real protocol rather than imitating it.
 | Archie | Prospero ARDP over UDP | archie.greektimes.ca:1525, telnet on 2323 |
 | IRC | RFC 1459, read-only view | irc.greektimes.ca:6667, channel `#retro` |
 | CU-SeeMe Live TV | Cornell CU-SeeMe over UDP | cu-seeme.greektv.ca:7648 |
-| Terminal | Telnet VT220, with Finger and QOTD | telnet.greektimes.ca |
+| RIPscrip | RIPscrip 1.54 vector graphics over Telnet | ripscrip.greektimes.ca:23 |
+| Terminal | Telnet VT220, with Finger, QOTD and Zmodem | telnet.greektimes.ca |
 
 ---
 
@@ -81,6 +91,15 @@ MSYS2 UCRT64, GCC. From the project root:
 ```
 build_x64.bat
 ```
+
+To build the installer as well, with the WiX Toolset installed:
+
+```
+installer\build_msi.bat
+```
+
+The version is set in one place, `src/suite_version.h`. Everything else,
+including the MSI ProductVersion, derives from it.
 
 ---
 

@@ -28,6 +28,7 @@
 #include <string.h>
 
 #include "newspaper_service.h"
+#include "http_fetch.h"
 
 #define NEWS_MAX_ISSUES        64
 #define NEWS_MANIFEST_CACHE    4
@@ -137,87 +138,40 @@ static void news_set_error(NewspaperService *s, const char *fmt, ...)
 /* Returns a fresh HeapAlloc'd buffer (caller HeapFree) with the
  * response body bytes; *out_len receives the byte count. NUL byte
  * always written at out_data[out_len]. Returns NULL on failure
- * (with s->last_error populated). */
+ * (with s->last_error populated).
+ *
+ * 2026-08-02: the WinHTTP request that used to be spelled out here was
+ * lifted into src/http_fetch.c so the updater could use the same one
+ * rather than a second copy. This function is now the newspaper's thin
+ * wrapper over it: it joins the service's host to the caller's path and
+ * translates the shared error string into last_error. The observable
+ * behaviour is unchanged (HTTPS, automatic proxy, any non-2xx is a
+ * failure, NUL past the end), except that there are now request
+ * timeouts, which this path never had. */
 static unsigned char *news_winhttp_get(NewspaperService *s,
                                        const wchar_t *path,
                                        DWORD *out_len)
 {
-    HINTERNET hSes = NULL, hCon = NULL, hReq = NULL;
-    unsigned char *buf = NULL;
-    DWORD     buf_cap = 0, buf_used = 0;
-    DWORD     status = 0, status_sz = sizeof(status);
-    BOOL      ok = FALSE;
+    wchar_t url[1024];
+    unsigned char *body = NULL;
+    char err[256];
+    int rc;
 
     if (out_len) *out_len = 0;
+    if (!s || !path) return NULL;
 
-    hSes = WinHttpOpen(L"MGT-Unicorn-Suite/0.2",
-                       WINHTTP_ACCESS_TYPE_AUTOMATIC_PROXY,
-                       WINHTTP_NO_PROXY_NAME, WINHTTP_NO_PROXY_BYPASS, 0);
-    if (!hSes) { news_set_error(s, "WinHttpOpen failed (err %lu)",
-                                 GetLastError()); goto done; }
-    hCon = WinHttpConnect(hSes, s->host,
-                          INTERNET_DEFAULT_HTTPS_PORT, 0);
-    if (!hCon) { news_set_error(s, "WinHttpConnect failed (err %lu)",
-                                 GetLastError()); goto done; }
-    hReq = WinHttpOpenRequest(hCon, L"GET", path, NULL,
-                              WINHTTP_NO_REFERER,
-                              WINHTTP_DEFAULT_ACCEPT_TYPES,
-                              WINHTTP_FLAG_SECURE);
-    if (!hReq) { news_set_error(s, "WinHttpOpenRequest failed (err %lu)",
-                                 GetLastError()); goto done; }
-    if (!WinHttpSendRequest(hReq, WINHTTP_NO_ADDITIONAL_HEADERS, 0,
-                            WINHTTP_NO_REQUEST_DATA, 0, 0, 0)) {
-        news_set_error(s, "WinHttpSendRequest failed (err %lu)",
-                       GetLastError());
-        goto done;
-    }
-    if (!WinHttpReceiveResponse(hReq, NULL)) {
-        news_set_error(s, "WinHttpReceiveResponse failed (err %lu)",
-                       GetLastError());
-        goto done;
-    }
-    if (!WinHttpQueryHeaders(hReq,
-            WINHTTP_QUERY_STATUS_CODE | WINHTTP_QUERY_FLAG_NUMBER,
-            NULL, &status, &status_sz, NULL)) {
-        status = 0;
-    }
-    if (status < 200 || status >= 300) {
-        news_set_error(s, "HTTP %lu", (unsigned long)status);
-        goto done;
-    }
-    for (;;) {
-        DWORD avail = 0, got = 0;
-        if (!WinHttpQueryDataAvailable(hReq, &avail)) {
-            news_set_error(s, "WinHttpQueryDataAvailable failed (err %lu)",
-                           GetLastError());
-            goto done;
-        }
-        if (avail == 0) break;
-        if (buf_used + avail + 1 > buf_cap) {
-            DWORD new_cap = buf_cap ? buf_cap * 2 : 8192;
-            unsigned char *nb;
-            while (new_cap < buf_used + avail + 1) new_cap *= 2;
-            nb = buf ? (unsigned char *)HeapReAlloc(GetProcessHeap(), 0,
-                                                    buf, new_cap)
-                     : (unsigned char *)HeapAlloc(GetProcessHeap(), 0,
-                                                  new_cap);
-            if (!nb) { news_set_error(s, "out of memory"); goto done; }
-            buf = nb; buf_cap = new_cap;
-        }
-        if (!WinHttpReadData(hReq, buf + buf_used, avail, &got) || got == 0)
-            break;
-        buf_used += got;
-    }
-    if (buf) buf[buf_used] = '\0';
-    if (out_len) *out_len = buf_used;
-    ok = TRUE;
+    _snwprintf(url, sizeof(url) / sizeof(url[0]) - 1,
+               L"https://%s%s%s", s->host,
+               (path[0] == L'/') ? L"" : L"/", path);
+    url[sizeof(url) / sizeof(url[0]) - 1] = 0;
 
-done:
-    if (hReq) WinHttpCloseHandle(hReq);
-    if (hCon) WinHttpCloseHandle(hCon);
-    if (hSes) WinHttpCloseHandle(hSes);
-    if (!ok && buf) { HeapFree(GetProcessHeap(), 0, buf); buf = NULL; }
-    return buf;
+    err[0] = 0;
+    rc = http_fetch_to_memory(url, &body, out_len, 0, err, sizeof(err));
+    if (rc != HTTP_FETCH_OK) {
+        news_set_error(s, "%s", err[0] ? err : "fetch failed");
+        return NULL;
+    }
+    return body;
 }
 
 /* ------------------------------------------------------------------ */

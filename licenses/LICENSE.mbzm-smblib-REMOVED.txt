@@ -1,0 +1,67 @@
+Notice about code that was REMOVED from the vendored mbzm Zmodem core
+=====================================================================
+
+This file documents code the MGT Unicorn Suite deliberately does NOT
+ship. It is kept so that the provenance of the vendored Zmodem core is
+auditable end to end.
+
+Upstream mbzm (https://github.com/roscopeco/mbzm) is MIT licensed, but
+it vendors its two CRC files from Synchronet's smblib:
+
+    crc16.c        CCITT 16-bit CRC table and calculation function
+    include/crc16.h
+    crc32.c        32-bit CRC table
+    include/crc32.h
+
+Those four files are NOT MIT. They carry the following notice, which
+upstream mbzm reproduces in its LICENSE.smblib file:
+
+    Copyright 2000 Rob Swindell - http://www.synchro.net/copyright.html
+
+    This program is free software; you can redistribute it and/or
+    modify it under the terms of the GNU General Public License
+    as published by the Free Software Foundation; either version 2
+    of the License, or (at your option) any later version.
+    See the GNU General Public License for more details: gpl.txt or
+    http://www.fsf.org/copyleft/gpl.html
+
+    Anonymous FTP access to the most recent released source is available
+    at ftp://vert.synchro.net, ftp://cvs.synchro.net and
+    ftp://ftp.synchro.net
+
+    Anonymous CVS access to the development source and modification
+    history is available at cvs.synchro.net:/cvsroot/sbbs, example:
+    cvs -d :pserver:anonymous@cvs.synchro.net:/cvsroot/sbbs login
+        (just hit return, no password is necessary)
+    cvs -d :pserver:anonymous@cvs.synchro.net:/cvsroot/sbbs checkout src
+
+    For Synchronet coding style and modification guidelines, see
+    http://www.synchro.net/source.html
+
+    You are encouraged to submit any modifications (preferably in Unix
+    diff format) via e-mail to mods@synchro.net
+
+The GNU General Public License is a copyleft license. The MGT Unicorn
+Suite is licensed under the GNU Affero General Public License v3.0 or
+later, and its policy for third-party code is that nothing copyleft is
+linked into the shipped binary. So all four files were DELETED from the
+vendored tree, and replacements were written from the polynomial
+definitions alone:
+
+    third_party/mbzm/crc16.c          CRC-16/XMODEM, poly 0x1021
+    third_party/mbzm/include/crc16.h
+    third_party/mbzm/crc32.c          CRC-32 (IEEE 802.3), poly 0xEDB88320
+    third_party/mbzm/include/crc32.h
+
+The replacements are placed in the public domain by their author,
+Dimitri Papadopoulos, 2026. They build their tables at run time from the
+polynomial, so not one constant of the removed files survives. Their
+external names, macros and semantics are identical to what the rest of
+the Zmodem core expects, which is why that core compiles unmodified.
+
+Both replacements are checked against the standard "123456789" vectors
+(CRC-16/XMODEM 0x31C3, CRC-32 0xCBF43926) and against their own
+incremental macro forms.
+
+No Synchronet, lrzsz or Omen Technology source was consulted while
+writing them.

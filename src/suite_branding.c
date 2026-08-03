@@ -13,7 +13,7 @@
 void suite_about_show(HWND parent)
 {
     MessageBoxA(parent,
-        SUITE_APP_TITLE " " SUITE_VERSION_STRING "\r\n"
+        SUITE_WINDOW_TITLE "\r\n"
         "\r\n"
         "Copyright (c) 2026 Dimitri Papadopoulos and\r\n"
         "The Montreal Greek Times.\r\n"
@@ -25,7 +25,17 @@ void suite_about_show(HWND parent)
         "\r\n"
         "Embedded protocol code (full credits in THIRD-PARTY-NOTICES.md):\r\n"
         "  freeWAIS-sf 2.2.14 (CNIDR 1993)\r\n"
-        "  libwww 5.4.1 (W3C Software License) [Phase 4+]\r\n",
+        "  libwww 5.4.1 (W3C Software License)\r\n"
+        "\r\n"
+        "Font data used by the RIPscrip renderer:\r\n"
+        "  Hershey Fonts, created by Dr. A. V. Hershey while working\r\n"
+        "  at the U. S. National Bureau of Standards. Distribution\r\n"
+        "  format originally created by James Hurt, Cognition Inc.\r\n"
+        "  Public domain.\r\n"
+        "  font8x8 by Daniel Hepper, based on the public-domain 8x8\r\n"
+        "  VGA font by Marcel Sondaas. Public domain.\r\n"
+        "\r\n"
+        "RIPscrip is a trademark of TeleGrafix Communications, Inc.\r\n",
         "About " SUITE_APP_TITLE,
         /* Plain MB_OK, no icon flag: MB_ICONINFORMATION/MB_ICONASTERISK
          * makes MessageBox play the system asterisk sound. Dropping the
