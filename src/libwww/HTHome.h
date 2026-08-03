@@ -51,8 +51,14 @@ URL and hence can be any resouce - not only resources on the local file system.
 #endif
 
 /* If the home page isn't found, use this file: */
+/* 2026-08-03 MGT privacy hardening. Upstream libwww default was
+ * "http://www.w3.org/". Repointed at the Suite's own retro web home,
+ * which is what this constant's role (the browser's fallback home
+ * document) actually corresponds to here; it matches WEB_DEFAULT_URL in
+ * src/web_module.c. Reached only from HTHomeAnchor(), which nothing in
+ * the Suite calls, so this is belt-and-braces. Value only. */
 #ifndef LAST_RESORT
-#define LAST_RESORT		"http://www.w3.org/"
+#define LAST_RESORT		"http://retro.greektimes.ca/"
 #endif
 
 /*
@@ -71,8 +77,12 @@ that case, the home page is often more generic than a personal home page.
 #endif
 
 /* and if that fails it will use this. */
+/* 2026-08-03 MGT privacy hardening. Upstream libwww default was
+ * "http://www.w3.org/". Repointed at the Suite's own retro web home for
+ * the same reason as LAST_RESORT above. Reached only from
+ * HTHomeAnchor(), which nothing in the Suite calls. Value only. */
 #ifndef REMOTE_ADDRESS
-#define REMOTE_ADDRESS  	"http://www.w3.org/"	    /* can't be file */
+#define REMOTE_ADDRESS  	"http://retro.greektimes.ca/"	    /* can't be file */
 #endif
 
 #ifndef LOCAL_DEFAULT_FILE

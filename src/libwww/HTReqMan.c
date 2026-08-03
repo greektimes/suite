@@ -27,8 +27,14 @@
 **      14 Fev 02 Message body added to HTRequest
 */
 
+/* 2026-08-03 MGT privacy hardening. Upstream libwww default was
+ * "http://www.w3.org:8001/". See the fuller note in HTLib.c: the Suite's
+ * WAIS client is the native CNIDR Z39.50 code in src/wais and libwww's
+ * WAIS path is not compiled, so this macro is never referenced. Emptied
+ * so no third-party host appears at runtime or in a source grep.
+ * Value only, no logic changed. */
 #if !defined(HT_DIRECT_WAIS) && !defined(HT_DEFAULT_WAIS_GATEWAY)
-#define HT_DEFAULT_WAIS_GATEWAY "http://www.w3.org:8001/"
+#define HT_DEFAULT_WAIS_GATEWAY ""
 #endif
 
 /* Library include files */
