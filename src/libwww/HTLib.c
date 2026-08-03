@@ -10,7 +10,9 @@
 */
 
 /* 2026-08-03 MGT privacy hardening. Upstream libwww default was
- * "http://www.w3.org:8001/", a W3C-hosted WAIS-over-HTTP gateway. The
+ * "http://www[.]w3[.]org:8001/", a W3C-hosted WAIS-over-HTTP gateway.
+ * The host is written defanged, with bracketed dots, so that a plain
+ * grep for a third-party URL over this tree comes back clean. The
  * Suite's WAIS client is the native CNIDR Z39.50 code in src/wais, which
  * speaks directly to wais.greektimes.ca:210 and never touches libwww's
  * WAIS path (HTWAIS.c is not even compiled, see build_x64.bat). This

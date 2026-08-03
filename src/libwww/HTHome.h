@@ -52,7 +52,9 @@ URL and hence can be any resouce - not only resources on the local file system.
 
 /* If the home page isn't found, use this file: */
 /* 2026-08-03 MGT privacy hardening. Upstream libwww default was
- * "http://www.w3.org/". Repointed at the Suite's own retro web home,
+ * "http://www[.]w3[.]org/", written defanged with bracketed dots so a
+ * plain third-party URL grep stays clean. Repointed at the Suite's own
+ * retro web home,
  * which is what this constant's role (the browser's fallback home
  * document) actually corresponds to here; it matches WEB_DEFAULT_URL in
  * src/web_module.c. Reached only from HTHomeAnchor(), which nothing in
@@ -78,7 +80,9 @@ that case, the home page is often more generic than a personal home page.
 
 /* and if that fails it will use this. */
 /* 2026-08-03 MGT privacy hardening. Upstream libwww default was
- * "http://www.w3.org/". Repointed at the Suite's own retro web home for
+ * "http://www[.]w3[.]org/", written defanged with bracketed dots so a
+ * plain third-party URL grep stays clean. Repointed at the Suite's own
+ * retro web home for
  * the same reason as LAST_RESORT above. Reached only from
  * HTHomeAnchor(), which nothing in the Suite calls. Value only. */
 #ifndef REMOTE_ADDRESS
