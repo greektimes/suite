@@ -135,38 +135,46 @@ directory.
 
 ---
 
-## Code signing policy
+## Code signing
 
-Windows release binaries of the Montreal Greek Times Unicorn Suite are
-signed to confirm their origin and integrity.
+**The Windows binaries are not code signed.** The installer and the
+executable it installs carry no Authenticode signature. Windows SmartScreen
+may therefore warn you on first run, as it did for previous releases. There
+is no signing planned for this project at present.
 
-Free code signing provided by SignPath.io, certificate by SignPath Foundation.
+Verify a download by its SHA-256 instead. The hash for each release is
+published on this repository's Releases page, in the `README.TXT` in the
+FTP directory, and in the update manifest at
+`https://apps.greektimes.ca/unicorn-suite/manifest.json`. The Suite's own
+update checker refuses any installer whose SHA-256 does not match the hash
+the manifest gives.
 
-### What is signed
+### How binaries are built
 
-The Windows installer package (`MGT_Unicorn_Suite_<version>.msi`) and the
-application executable it installs. Signed binaries are published on this
-repository's Releases page and mirrored, byte for byte with identical hashes,
-on the project's own distribution endpoint at `apps.greektimes.ca`.
+The published v0.5.0-beta installer was built by the maintainer on a local
+Windows machine, with `build_x64.bat` and then the MSI build script under
+`installer/`, and uploaded from there.
 
-### Build and signing process
+A GitHub Actions workflow, `.github/workflows/build-msi.yml`, can also build
+the MSI from this repository on a GitHub-hosted runner. It is not currently
+the release path.
 
-Release binaries are built only from this public repository by GitHub Actions
-on GitHub-hosted runners; the workflow is `.github/workflows/build-msi.yml`.
-Only that automated build is submitted for signing. A binary built on a
-developer machine is never signed. SignPath verifies, for every release, that
-the signed binary is an automated build of the source in this repository, and
-the signing certificate's private key is held by SignPath on hardware security
-modules. This project does not possess it.
+One identical file is published everywhere. The MSI on this repository's
+Releases page is byte for byte the same file, with the same SHA-256, as the
+one on the project's own distribution endpoint at `apps.greektimes.ca`, on
+`ftp.greektimes.ca`, and on `gopher.greektimes.ca`.
+
+The version is set in one place, `src/suite_version.h`, and everything else
+including the MSI ProductVersion derives from it.
 
 ### Team roles
 
 This is a single-maintainer project. Dimitri Papadopoulos (GitHub:
 Dimitri-Papadopoulos), publisher of The Montreal Greek Times, is the sole
 Author, Reviewer, and Approver, and is the only person with write or release
-authority over this repository. Because the build scripts and CI configuration
-determine the signed output, changes to those files are treated as
-security-relevant and reviewed as source.
+authority over this repository. Because the build scripts and CI
+configuration determine the released output, changes to those files are
+treated as security-relevant and reviewed as source.
 
 ### Privacy statement
 
@@ -178,7 +186,7 @@ On startup it makes one automatic network request: an update check to
 `https://apps.greektimes.ca/unicorn-suite/manifest.json` over HTTPS, throttled
 to at most once every 24 hours and disableable in settings. The request carries
 nothing beyond the plain GET; any update it offers is downloaded only over HTTPS
-and installed only if its SHA-256 matches the signed manifest.
+and installed only if its SHA-256 matches the hash the manifest gives.
 
 Every other connection happens only when you choose it, by playing a stream,
 opening a tab, or connecting a retro-protocol client. Through all of its own
