@@ -115,6 +115,33 @@ MGT_Unicorn_Suite_x64.exe
 /third_party/mbzm/*.o
 
 # ------------------------------------------------------------------
+# Added 2026-08-08, the NABU work in 0.5.0.
+#
+# Same reasoning as mbzm above, and it matters more here. All three of
+# these are MIT, all three are MODIFIED by this project, and two of them
+# are compiled straight into the shipped executable. A modified vendored
+# core that is not in the repository cannot be audited or rebuilt, and
+# MIT requires its copyright and permission notice to travel with every
+# copy, so license.txt in each of these directories is not optional.
+#
+# These negations exist because /third_party/* above is a deny-all. Add
+# a vendored dependency without adding its negation here and it vanishes
+# from the public repository silently, licence text and all.
+#
+#   marduk        the NABU emulation core, linked into the Suite
+#   opennabuipl   upstream OpenNabu IPL source, the fork's base
+#   opennabu      the stock assembled ROM, shipped as the fallback
+#
+# Object files are excluded; the assembled .bin images are NOT, because
+# installeruild_msi.bat stages them into the MSI and the CI build
+# would fail without them.
+# ------------------------------------------------------------------
+!/third_party/marduk/
+/third_party/marduk/*.o
+!/third_party/opennabuipl/
+!/third_party/opennabu/
+
+# ------------------------------------------------------------------
 # Added 2026-08-02, MSI packaging. The WiX source and the build script
 # are tracked; what they GENERATE is not. installer/payload is a staged
 # copy of files that already live in the repository, and installer/out

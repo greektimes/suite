@@ -1,4 +1,4 @@
-MGT UNICORN SUITE v0.4.0-beta
+MGT UNICORN SUITE v0.5.0-beta
 The Montreal Greek Times, August 2026
 
 The MGT Unicorn Suite is the official Windows app of The Montreal
@@ -14,12 +14,27 @@ and a Web 1.0 browser built on W3C libwww (retro.greektimes.ca),
 Gopher (RFC 1436), ARPANET FTP-Mail (RFC 765/691), WAIS search
 over Z39.50-1988 via freeWAIS-sf, a read-only IRC view of the
 #retro channel, CU-SeeMe live television over UDP, and a VT220
-Telnet terminal with Finger and QOTD shortcuts, and Archie
-search of the anonymous FTP archive over the original
-Prospero/ARDP protocol (archie.greektimes.ca), plus the
-interactive telnet interface on port 2323. New in this release
-is a native RIPscrip renderer for the retro graphics pages
-(ripscrip.greektimes.ca) and Zmodem file downloads over Telnet.
+Telnet terminal with Finger and QOTD shortcuts, Archie search of
+the anonymous FTP archive over the original Prospero/ARDP
+protocol (archie.greektimes.ca), and a RIPscrip 1.54 graphical
+terminal (ripscrip.greektimes.ca).
+
+New in this release is the NABU tab, a built-in emulator of the
+1980s NABU Personal Computer. Press Connect and a NABU boots
+inside the app, in seconds, straight onto the Montreal Greek
+Times NABU channel. A custom host and port reaches any other
+NABU server. The emulation runs in the Suite's own window rather
+than launching anything: it is the Marduk emulation core (MIT)
+compiled in, booting on MGT IPL, this project's fork of OpenNabu
+IPL (MIT), which skips the floppy, hard disk and memory checks a
+real NABU does not need here and reaches the channel in under
+half a second instead of ten.
+
+If you own a real NABU, the Suite can also act as its Internet
+Adapter over a serial cable, so the actual hardware boots its own
+ROM against a NABU channel server.
+
+See NOTICES.TXT for the emulation licenses and credits.
 
 REQUIREMENTS
 
@@ -30,7 +45,7 @@ Bootstrapper before first launch.
 
 INSTALL
 
-Run the installer, MGT_Unicorn_Suite_0.4.0.msi. It installs to
+Run the installer, MGT_Unicorn_Suite_0.5.0.msi. It installs to
 Program Files for all users and adds a Start Menu entry; the
 desktop shortcut is optional and can be turned off during setup.
 Uninstall from Settings, Apps and features.
@@ -46,7 +61,7 @@ the LICENSES directory.
 
 The complete Corresponding Source for this exact build is at
 
-  https://github.com/greektimes/suite/releases/tag/v0.4.0-beta
+  https://github.com/greektimes/suite/releases/tag/v0.5.0-beta
 
 Build it with build_x64.bat under MSYS2 UCRT64.
 

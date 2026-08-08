@@ -69,7 +69,11 @@
  * not a manifest. */
 #define UPDATE_MANIFEST_MAX   (256 * 1024)
 
-/* Ceiling on the installer download. The 0.4.0 MSI is under 5 MB. */
+/* Ceiling on the installer download. Sanity bound, not a tight fit: the
+ * 0.4.0 MSI was under 5 MB and 0.5.0 is about 16 MB, because 0.5.0
+ * carries the NABU emulator package. Keep this comfortably above the
+ * real size, since a manifest naming a larger installer than this would
+ * be refused and the update would simply never install. */
 #define UPDATE_MSI_MAX        (256ULL * 1024ULL * 1024ULL)
 
 #define UPDATE_REG_KEY  "Software\\The Montreal Greek Times\\MGT Unicorn Suite"

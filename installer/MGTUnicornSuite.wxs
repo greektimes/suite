@@ -25,6 +25,16 @@
                                     directory first
         README.TXT LICENSE.TXT NOTICES.TXT CREDITS.TXT
         LICENSES\*.txt
+        NABU\                       the NABU-only MAME 0.250 build and
+                                    the preserved NABU boot ROMs. A
+                                    SEPARATE PROGRAM under
+                                    GPL-2.0-or-later, spawned as its own
+                                    process by the NABU tab and never
+                                    linked into the Suite. Its own
+                                    COPYING travels with it, and
+                                    THIRD-PARTY-NOTICES.md carries the
+                                    written offer for the corresponding
+                                    source.
 
   There is NO font component and no image component. The two Ubuntu Mono
   faces, the application icon, both logos and all seven channel icons are
@@ -35,6 +45,13 @@
   makes a per-machine install into Program Files safe. WebView2 keeps its
   user data in %LOCALAPPDATA%\MGT Unicorn Suite\WebView2, by design, and
   that is deliberately NOT removed on uninstall: it is user data.
+
+  That rule is why the NABU tab passes the emulator explicit write paths.
+  Left alone the emulator saves its configuration, NVRAM and screenshots
+  beside its own executable, which under Program Files would fail for a
+  standard user. Every writable path it has is redirected into
+  %LOCALAPPDATA%\MGT Unicorn Suite\NABU; only its read paths (roms,
+  plugins, the shipped ini files) point in here. See src\nabu_module.c.
 -->
 <Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
      xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui"
@@ -138,6 +155,7 @@
              AllowAbsent="no"
              ConfigurableDirectory="INSTALLFOLDER">
       <ComponentGroupRef Id="AppFiles" />
+      <ComponentGroupRef Id="NabuFiles" />
       <ComponentGroupRef Id="DocFiles" />
       <ComponentRef Id="StartMenuShortcut" />
       <ComponentRef Id="RegistryEntries" />
@@ -221,6 +239,15 @@
       <Directory Id="GREEKTIMESFOLDER" Name="Greek Times">
         <Directory Id="INSTALLFOLDER" Name="Suite">
           <Directory Id="LICENSESFOLDER" Name="LICENSES" />
+          <!--
+            The emulator package. src\nabu_module.c looks for
+            <folder containing the Suite exe>\NABU\mame.exe FIRST, so
+            this name and this position are a contract with the app, not
+            a filing preference. Its subdirectories (roms, plugins, ini,
+            cfg, nabu, ui) are harvested, not enumerated; see the Files
+            element in the NabuFiles group.
+          -->
+          <Directory Id="NABUFOLDER" Name="NABU" />
         </Directory>
       </Directory>
     </StandardDirectory>
@@ -258,6 +285,38 @@
       </Component>
     </ComponentGroup>
 
+    <!--
+      THE NABU EMULATOR PACKAGE.
+
+      96 files across six subdirectories, one of them a 107 MB
+      executable. They are HARVESTED with the Files element rather than
+      listed: a hand-written File per entry would be 96 components to
+      keep in step with an upstream package we do not author, and the
+      first plugin the next emulator version adds would be silently left
+      behind. Files generates a component per file with a stable
+      generated GUID, so repair and upgrade still work per file.
+
+      What is NOT harvested: the disks folder, dropped during staging in
+      installer\build_msi.bat. The tab boots from the network channel and
+      never mounts a floppy image, so those are the only files in the
+      package nothing installed here can reach.
+
+      LICENSING. This is a separate program under GPL-2.0-or-later. It is
+      spawned as its own process and is not linked into the Suite, so
+      shipping the two together is mere aggregation. Its own COPYING is
+      inside the harvested tree, and THIRD-PARTY-NOTICES.md carries the
+      written offer for the corresponding source of THIS version.
+
+      The boot ROMs under roms\ are preserved firmware, credited in
+      THIRD-PARTY-NOTICES.md to the Vintagecomputer.ca and Leo Binkowski
+      preservation work distributed via NabuNetwork.com. They are
+      attributed as preserved firmware; no fair-use claim is made for
+      them.
+    -->
+    <ComponentGroup Id="NabuFiles" Directory="NABUFOLDER">
+      <Files Include="$(PayloadDir)\NABU\**" />
+    </ComponentGroup>
+
     <ComponentGroup Id="DocFiles">
       <Component Id="Docs" Directory="INSTALLFOLDER"
                  Guid="E7D14B92-6C03-4A85-9F72-1B8E5C0D6A47">
@@ -270,9 +329,32 @@
                  Guid="5A6F0C38-2E14-47B9-8D63-9C4B1E7A2F85">
         <File Id="LicCnidr"  Name="CNIDR-1993.txt"                  Source="$(PayloadDir)\LICENSES\CNIDR-1993.txt" KeyPath="yes" />
         <File Id="LicLgpl"   Name="LGPL-2.1.txt"                    Source="$(PayloadDir)\LICENSES\LGPL-2.1.txt" />
+        <!--
+          GPL-2.0 is here for the NABU emulator. Its own COPYING ships
+          beside it in NABU\, but that file defers to docs/legal/GPL-2.0,
+          which a binary distribution does not carry, so the full text
+          has to accompany the binary from somewhere.
+        -->
+        <File Id="LicGpl2"   Name="GPL-2.0.txt"                     Source="$(PayloadDir)\LICENSES\GPL-2.0.txt" />
         <File Id="LicW3C"    Name="W3C-Software-Notice.txt"         Source="$(PayloadDir)\LICENSES\W3C-Software-Notice.txt" />
         <File Id="LicMbzm"   Name="LICENSE.mbzm.txt"                Source="$(PayloadDir)\LICENSES\LICENSE.mbzm.txt" />
         <File Id="LicMbzmGp" Name="LICENSE.mbzm-smblib-REMOVED.txt" Source="$(PayloadDir)\LICENSES\LICENSE.mbzm-smblib-REMOVED.txt" />
+        <!--
+          The two MIT texts the NABU Native tab brings, added for 0.5.0.
+          Both are byte-identical copies of upstream's own license.txt.
+
+          Marduk is COMPILED INTO the Suite exe, not launched beside it
+          like the MAME package, so its notice has to travel with the
+          binary; MIT requires the copyright and permission notice in
+          all copies. The same text covers the three chip cores Marduk
+          carries, which is why one file names four copyright holders.
+
+          The OpenNabu text covers stock OpenNabu IPL, the shipped
+          NABU\opennabu.bin fallback, and MGT IPL, the Suite's fork,
+          which is under the same grant.
+        -->
+        <File Id="LicMarduk"   Name="LICENSE.marduk.txt"   Source="$(PayloadDir)\LICENSES\LICENSE.marduk.txt" />
+        <File Id="LicOpenNabu" Name="LICENSE.opennabu.txt" Source="$(PayloadDir)\LICENSES\LICENSE.opennabu.txt" />
       </Component>
     </ComponentGroup>
 

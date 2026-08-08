@@ -244,6 +244,186 @@ files are rendered here as "(C)".
   and `third_party/mbzm/MGT-CHANGES.md` for the vendoring notes.
   Upstream's `rz.c` example driver was also dropped.
 
+## MAME 0.250 (NABU PC emulator, shipped as a separate program)
+
+- Upstream origin: MAME, the Multiple Arcade Machine Emulator, version
+  0.250, from https://www.mamedev.org/ . The build shipped here is a
+  NABU-only compile of that release, produced with
+  `make SOURCES=src/mame/nabu/nabupc.cpp REGENIE=1` per the instructions
+  at https://www.mamedev.org/tools/ . The NABU PC driver
+  (`src/mame/nabu/nabupc.cpp`) is by brijohn.
+- Copyright, as found in the package's own `COPYING`:
+  - `MAME` / `Copyright (c) 1997-2022 MAMEdev and contributors`
+- License: **GNU General Public License, version 2** ("version 2, as
+  provided in docs/legal/GPL-2.0"), i.e. GPL-2.0-or-later as MAME
+  distributes it. Individual upstream source files carry less
+  restrictive licenses, as noted in their own headers.
+- License text: `licenses/GPL-2.0.txt`. The emulator's own `COPYING`
+  also travels with it, installed at `NABU\COPYING`. That file points
+  at `docs/legal/GPL-2.0`, which a binary distribution does not carry,
+  which is why the full text is supplied here.
+- **WRITTEN OFFER FOR THE CORRESPONDING SOURCE.** The complete
+  corresponding source code for this exact version is the MAME 0.250
+  release, published by MAMEdev at https://www.mamedev.org/ and tagged
+  `mame0250` at https://github.com/mamedev/mame . In addition, and for
+  at least three years from the date this Suite version was
+  distributed, The Montreal Greek Times will provide, to any third
+  party who asks, a complete machine-readable copy of the corresponding
+  source for the emulator binary shipped in this installer, for no more
+  than the cost of physically performing the distribution. Write to
+  info@greektimes.ca .
+- **Relationship to the Suite: AGGREGATION, NOT LINKING.** The emulator
+  is a separate program. No part of the Suite links against it, includes
+  its headers, or shares its address space. The two are distributed
+  together on one medium, which is mere aggregation under the GPL, and
+  each program keeps its own license. As of 0.5.0 the Suite does not
+  even execute it; see the next point.
+- Trademark: MAME is a registered trademark of Gregory Ember. The name,
+  the logo and the wordmark are NOT used anywhere in the Suite's user
+  interface. The tab is labelled "NABU" and describes what it does
+  functionally. The name is used here, in the notices, because accurate
+  attribution and a usable source offer require naming the work.
+- Used for: **nothing, as of 0.5.0.** Through 0.4.x the NABU tab spawned
+  this emulator as its own process. That tab was retired on 2026-08-07
+  and replaced by the in-window NABU Native tab, which uses the Marduk
+  core described above; `src/nabu_module.c`, the code that launched
+  MAME, was removed with it. The package is still installed under
+  `NABU\`, and its preserved boot ROMs are still the only thing in the
+  install that could boot a genuine NABU firmware, but no Suite code
+  path executes `NABU\mame.exe` any more.
+- This notice, the GPL-2.0 text and the written offer above are kept in
+  full regardless, because the binary is still distributed in the
+  installer, and distribution is what the obligation attaches to. Whether
+  to keep shipping a program nothing launches is a packaging question,
+  not a licensing one, and is open.
+
+## NABU PC boot ROMs (preserved firmware)
+
+- What they are: the NABU Personal Computer's boot ROMs and the NABU
+  keyboard controller ROM, installed under `NABU\roms\nabupc\` and
+  `NABU\roms\nabu_kb\`. The emulator cannot boot a NABU without them.
+- Origin and credit: preserved firmware, dumped and published through
+  the NABU preservation effort: the Vintagecomputer.ca archive and Leo
+  Binkowski's preservation work, distributed via NabuNetwork.com. They
+  are the original NABU Manufacturing Corporation firmware, from a
+  company dissolved in the mid 1980s.
+- Status: these are **attributed as preserved firmware**. No license
+  grant accompanies them and none is claimed here; neither is any fair
+  use or fair dealing defence asserted. They are included because they
+  are the machine's own boot code, they are what the preservation
+  community has published for exactly this purpose, and there is no
+  substitute that boots a real NABU. If a rights holder identifies
+  themselves and objects, they will be removed.
+- Not covered by the Suite's AGPL, and not covered by the emulator's
+  GPL: they are data files, neither authored by nor licensed from
+  either project.
+
+## Marduk (NABU emulation core, compiled into the Suite)
+
+- What it is: the emulation core of Marduk, an emulator for the NABU
+  Personal Computer. The **NABU Native** tab runs a NABU inside the
+  Suite's own window rather than launching a separate emulator, and this
+  is the code that emulates the machine. Unlike the MAME package
+  described below, this is NOT a separate program: it is compiled and
+  linked directly into `MGT_Unicorn_Suite_x64.exe`.
+- Upstream origin: https://github.com/buricco/marduk, upstream commit
+  `bd99967c2aded5f8a5fe25ac3bbb595a71b0dfea` (2026-03-03). Vendored at
+  `third_party/marduk/`.
+- Licence: **MIT**. The grant is one text covering four copyright
+  holders, because Marduk carries three chip emulation cores of separate
+  authorship:
+  - Z80 emulation, Copyright (c) 2019 **Nicolas Allemand**
+  - TMS9918 emulation, Copyright (c) 2021, 2022 **Troy Schrapel**
+  - AY-3-8910 emulation, Copyright (c) 2001-2022 **Mitsutaka Okazaki**
+  - NABU emulation, Copyright 2022, 2023 **S. V. Nickolas**, and
+    Copyright 2023 **Marcin Wołoszczuk**
+  The full text is upstream's own and is reproduced unmodified at
+  `third_party/marduk/license.txt`. It ships with the binary at
+  `LICENSES\LICENSE.marduk.txt`, which is a byte-identical copy, because
+  MIT requires the copyright and permission notice to accompany every
+  copy of the software.
+- Which files are compiled in: `z80.c`, `tms9918.c`, `tms_util.c`,
+  `emu2149.c`, `disk.c`, `modem.c`. Every one was checked individually
+  and each carries the same MIT grant in its own header.
+- What the Suite modified: the Suite's changes to the vendored copy are
+  listed in `third_party/marduk/MGT-CHANGES.md`, and each modified file
+  is marked as modified in its own header, as MIT requires.
+- What is NOT Marduk: the machine driver, the frame loop, the lifecycle,
+  the GDI renderer, the keyboard and every other Win32 decision live in
+  `src/nabu_core.[ch]` and `src/nabu_native_module.[ch]`. Those are the
+  Suite's own work and are AGPLv3 like the rest of it.
+- Used for: the NABU Native tab.
+
+## nabud (interoperability reference, no code used)
+
+This entry exists to record a conclusion, not to satisfy an obligation.
+
+- What it is: nabud, a NABU Network adaptor server by **Jason R.
+  Thorpe**, https://github.com/thorpej/nabud. It is the server the
+  Montreal Greek Times NABU channel runs, and it is the far end that the
+  NABU Native tab and the serial bridge talk to.
+- Licence: **BSD 2-Clause**, Copyright (c) 2022 Jason R. Thorpe.
+  Confirmed by reading the `LICENSE` file and the per-file headers of
+  the running installation rather than assumed.
+- What was taken from it: nothing that its licence reaches. Two things
+  in the Suite were settled by reading nabud's source, and both are
+  facts about an external wire protocol rather than nabud's expression
+  of anything:
+  - The CHANGE_CHANNEL exchange in `src/nabu_channel.c`, namely the
+    message byte `0x85`, the two-byte acknowledgement `0x10 0x06`, the
+    little-endian channel number and the `0xE4` confirmation. These are
+    the classic NABU adapter protocol, which a real 1982 machine emits.
+    nabud does not originate them either: its own `adaptor.c` credits
+    them to NabuNetworkEmulator (`AdaptorEmulator.cs`) by Nick Daniels.
+    nabud's code is also the opposite side of the conversation, a server
+    receiving; the Suite's is a client sending, written from scratch
+    against a different transport abstraction.
+  - The native serial rate in `src/nabu_serial.h`, `(3579540 / 2) / 16`,
+    which is 111860.625 bits per second. That is a division of the
+    NABU's own crystal, a hardware fact, and nabud's `conn.c` derives it
+    the same way for the same reason.
+- Conclusion: **no attribution is required**, because no copyrightable
+  expression was copied. It is credited here anyway, because reading
+  someone's source to learn a protocol is a debt even when it is not a
+  legal one, and because the in-source comments that cite nabud should
+  resolve to something a reader can find.
+- Consequently nabud is NOT listed in the Help > About box, which names
+  what the Suite embeds and ships.
+
+## OpenNabu IPL, and MGT IPL (the Suite's fork of it)
+
+- What they are: replacement boot firmware for the NABU Personal
+  Computer, 4 KB, written in Z80 assembly. The **NABU Native** tab boots
+  the emulated machine on `firmware/mgtipl/mgtipl.bin`, which is the
+  Suite's own fork, and falls back to stock OpenNabu IPL
+  (`third_party/opennabu/opennabu.bin`) if the fork is missing.
+- Upstream origin: OpenNabu IPL by **S. V. Nickolas** (buricco),
+  https://github.com/buricco/opennabuipl. The same author wrote Marduk,
+  the NABU emulation core the native tab is a port of.
+- Licence: **MIT**, Copyright 2012, 2013, 2015, 2023 S. V. Nickolas. The
+  full text is at `third_party/opennabuipl/license.txt` and
+  `firmware/mgtipl/license.txt`, and is reproduced at the head of every
+  copy of the source. It is the licence that governs the fork as well.
+  It ships with the binary at `LICENSES\LICENSE.opennabu.txt`, which is
+  a byte-identical copy of upstream's own file.
+- What the Suite ships: the unmodified upstream source, vendored at
+  `third_party/opennabuipl/`; the Suite's **modified** copy at
+  `firmware/mgtipl/mgtipl.a80`, with every change listed in
+  `firmware/mgtipl/MGT-CHANGES.md`; and the assembled images. Modified
+  copies are marked as such in the file header, as MIT requires the
+  copyright and permission notice to be preserved.
+- In an installed Suite both assembled images sit beside the emulator
+  package, as `NABU\mgtipl.bin` and `NABU\opennabu.bin`. Before 0.5.0
+  the installer carried neither, and an installed NABU Native tab had no
+  firmware to boot at all; `installer\build_msi.bat` now stages both.
+- Why a fork: the tab is an emulated NABU tuned to one channel, so the
+  fork removes the floppy probe, the Winchester probe, the power-on RAM
+  test, the boot menu and the last-device memory, and goes straight to
+  the channel. It does not change one byte of what goes on the wire.
+- Note that this is REPLACEMENT firmware, openly licensed, and is not the
+  preserved NABU firmware described below. The native tab needs no
+  preserved ROM at all.
+
 ## WiX Toolset (installer build tooling, and installer UI resources)
 
 - Upstream origin: the WiX Toolset, https://wixtoolset.org/, source at

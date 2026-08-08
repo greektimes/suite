@@ -13,21 +13,8 @@
 @echo off
 setlocal EnableDelayedExpansion
 
-@REM 2026-08-03 CI portability. The UCRT64 toolchain lives at
-@REM C:\msys64\ucrt64 on the Z840, but a GitHub-hosted runner installs
-@REM MSYS2 somewhere under the runner's temp directory. MSYS2_UCRT64
-@REM lets the caller say where it is; unset, it falls back to the Z840
-@REM path, so a local build is byte-for-byte the same command line it
-@REM has always been.
-if not defined MSYS2_UCRT64 set MSYS2_UCRT64=C:\msys64\ucrt64
-set CC=%MSYS2_UCRT64%\bin\gcc.exe
-set WINDRES=%MSYS2_UCRT64%\bin\windres.exe
-
-if not exist "%CC%" (
-    echo ERROR: gcc not found at %CC%
-    echo Set MSYS2_UCRT64 to the ucrt64 directory of your MSYS2 install.
-    exit /b 1
-)
+set CC=C:\msys64\ucrt64\bin\gcc.exe
+set WINDRES=C:\msys64\ucrt64\bin\windres.exe
 
 set CFLAGS_WAIS=-std=gnu89 -fcommon -fpermissive -O2 -fstack-protector-strong -D_WIN32 -DTELL_USER -DTCPIP -Isrc -Isrc\wais
 set CFLAGS_LIBWWW=-std=gnu89 -fcommon -fpermissive -O2 ^
@@ -60,6 +47,18 @@ set CFLAGS_NEWS=-O2 -fstack-protector-strong -D_WIN32 -Isrc
 @REM replaced with public-domain ones, see third_party\mbzm\MGT-CHANGES.md.
 set CFLAGS_ZMODEM=-O2 -fstack-protector-strong -D_WIN32 -Isrc ^
     -Ithird_party\mbzm\include
+@REM 2026-08-05 Native NABU, phase 1: the vendored Marduk emulation core
+@REM lives in third_party\marduk and is reached only by src\nabu_core.c,
+@REM so the include path is confined to those translation units. Marduk
+@REM and the three chip cores it carries (z80, TMS9918, AY-3-8910) are
+@REM all MIT; see third_party\marduk\license.txt.
+@REM
+@REM NOTHING CALLS THIS YET. The machine is compiled into the Suite from
+@REM this phase on so it cannot rot, but the NABU tab in the shipping
+@REM build is still the external-player one. See
+@REM docs\2026-08-05_NABU_NATIVE_PHASE1.md.
+set CFLAGS_NABU=-O2 -fstack-protector-strong -D_WIN32 -Isrc ^
+    -Ithird_party\marduk
 @REM 2026-06-16 Radio engine dispatch: radio_engine.c uses the Microsoft
 @REM AAC Decoder MFT (IMFTransform IIDs live in mfuuid) plus WASAPI
 @REM (CLSID_MMDeviceEnumerator / IAudioClient, defined locally via
@@ -134,6 +133,29 @@ for %%f in (zserial zheaders znumbers crc16 crc32) do (
 
 echo   zmodem_recv.c (Suite Zmodem receive session, uses CFLAGS_ZMODEM)
 %CC% %CFLAGS_ZMODEM% -c -o src\zmodem_recv.o src\zmodem_recv.c
+if errorlevel 1 exit /b 1
+
+echo Compiling the vendored NABU emulation core (Marduk, MIT)...
+for %%f in (z80 tms9918 tms_util emu2149 disk modem) do (
+    echo   third_party\marduk\%%f.c
+    %CC% %CFLAGS_NABU% -c -o third_party\marduk\%%f.o third_party\marduk\%%f.c
+    if errorlevel 1 exit /b 1
+)
+
+echo   nabu_core.c (the NABU machine, uses CFLAGS_NABU)
+%CC% %CFLAGS_NABU% -c -o src\nabu_core.o src\nabu_core.c
+if errorlevel 1 exit /b 1
+
+echo   nabu_channel.c (the adapter CHANGE_CHANNEL exchange, shared)
+%CC% %CFLAGS_NABU% -c -o src\nabu_channel.o src\nabu_channel.c
+if errorlevel 1 exit /b 1
+
+echo   nabu_serial.c (the real-NABU serial bridge)
+%CC% %CFLAGS_NABU% -c -o src\nabu_serial.o src\nabu_serial.c
+if errorlevel 1 exit /b 1
+
+echo   nabu_native_module.c (the NABU Native tab's GDI renderer, uses CFLAGS_NABU)
+%CC% %CFLAGS_NABU% -c -o src\nabu_native_module.o src\nabu_native_module.c
 if errorlevel 1 exit /b 1
 
 echo   web_module.c (libwww-driven, uses CFLAGS_WEB)
@@ -221,6 +243,11 @@ echo Linking %TARGET%...
     src\rip_ega.o src\rip_parser.o src\rip_text.o src\rip_button.o ^
     src\rip_hershey_data.o src\rip_font8x8_data.o ^
     src\ripscrip_module.o ^
+    src\nabu_core.o src\nabu_native_module.o ^
+    src\nabu_channel.o src\nabu_serial.o ^
+    third_party\marduk\z80.o third_party\marduk\tms9918.o ^
+    third_party\marduk\tms_util.o third_party\marduk\emu2149.o ^
+    third_party\marduk\disk.o third_party\marduk\modem.o ^
     src\zmodem_recv.o ^
     third_party\mbzm\zserial.o third_party\mbzm\zheaders.o ^
     third_party\mbzm\znumbers.o ^

@@ -18,6 +18,7 @@
 #include "irc_module.h"
 #include "archie_module.h"
 #include "ripscrip_module.h"
+#include "nabu_native_module.h"
 #include "mode_toggle.h"
 #include "modern_mode.h"
 #include "livetv_module.h"
@@ -84,7 +85,11 @@
 #define ID_BTN_IRC      SUITE_ID_BTN_IRC
 #define ID_BTN_ARCHIE   SUITE_ID_BTN_ARCHIE
 #define ID_BTN_RIPSCRIP SUITE_ID_BTN_RIPSCRIP
-#define ID_MODULE_COUNT 9
+#define ID_BTN_NABUNAT  SUITE_ID_BTN_NABUNAT
+/* 2026-08-07: was 11. The external-player NABU tab was retired and the
+ * in-Suite port took its place and its name, so there is one NABU row
+ * now instead of two. */
+#define ID_MODULE_COUNT 10
 
 #define ID_HELP_ABOUT   200   /* Help > About (mouse / Alt+H mnemonic) */
 #define ID_HELP_UPDATE  201   /* Help > Check for Updates              */
@@ -102,9 +107,19 @@
 #define ID_STATUS       300
 
 /* Module table. One entry per module, in left-to-right button order.
- * Tab order (2026-08-01: Unicorn Desktop retired, RIPscrip in its slot):
- *   RIPscrip, Retro Web Browser, Gopher, ARPANET FTP-Mail,
- *   WAIS, Archie, IRC, CU-SeeMe Live TV, Terminal.
+ * Tab order (2026-08-07):
+ *   RIPscrip, NABU Native, Retro Web Browser, Gopher,
+ *   ARPANET FTP-Mail, WAIS, Archie, IRC, CU-SeeMe Live TV, Terminal.
+ *
+ * THE TWO NABU TABS BECAME ONE ON 2026-08-07. There used to be a "NABU"
+ * row that launched the bundled MAME build in a window of its own, and a
+ * "NABU Native" row beside it holding the in-Suite Marduk port while that
+ * port was built. The port now boots the channel faster than the external
+ * player did, inside the tab, with its own firmware, so the external
+ * player was retired and its module withdrawn. See
+ * docs/2026-08-07_NABU_CONNECTION_PANEL.md. `nabu_module.c` and its
+ * header are kept beside the tree as .bak-20260807-pre-purge so the
+ * removal is reversible.
  * The bar renders in table order. Each module keeps its stable command
  * id; the F1-F12 accelerators were retired (the retro section ran out of
  * function keys), so tab switching is now mouse-only. Index 0 is
@@ -122,6 +137,10 @@ static const suite_module_t g_modules[ID_MODULE_COUNT] = {
       ripscrip_module_activate, ripscrip_module_deactivate,
       ripscrip_module_resize,   ripscrip_module_on_command,
       ripscrip_module_has_unsaved },
+    { "NABU",                      ID_BTN_NABUNAT,
+      nabu_native_module_activate, nabu_native_module_deactivate,
+      nabu_native_module_resize,   nabu_native_module_on_command,
+      nabu_native_module_has_unsaved },
     { "Retro Web\nBrowser",        ID_BTN_WEB,
       web_module_activate, web_module_deactivate,
       web_module_resize, web_module_on_command,
@@ -157,8 +176,12 @@ static const suite_module_t g_modules[ID_MODULE_COUNT] = {
 };
 
 static HWND g_hwndMain    = NULL;
-static HWND g_hwndButtons[ID_MODULE_COUNT] =
-    { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL };
+/* One NULL, not ID_MODULE_COUNT of them. C zero-fills the rest, and this
+ * had already drifted: the list was spelled out by hand, the tab count
+ * changed twice during the NABU work, and the spelled-out version was
+ * left one element too long, which GCC reported as excess elements in an
+ * array initializer. Written this way it cannot drift again. */
+static HWND g_hwndButtons[ID_MODULE_COUNT] = { NULL };
 static HWND g_hwndContent = NULL;
 static HWND g_hwndStatus  = NULL;
 static int  g_active_module = -1;
@@ -924,6 +947,7 @@ static LRESULT CALLBACK SuiteWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
         int wmId = LOWORD(wParam);
         switch (wmId) {
         case ID_BTN_RIPSCRIP:
+        case ID_BTN_NABUNAT:
         case ID_BTN_WEB:
         case ID_BTN_GOPHER:
         case ID_BTN_ARPAMAIL:
@@ -1134,6 +1158,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrev, LPSTR lpCmdLine, int nShow)
 
     suite_update_shutdown();
     ripscrip_module_shutdown();
+    nabu_native_module_shutdown();
     irc_module_shutdown();
     cuseeme_module_shutdown();
     telnet_module_shutdown();

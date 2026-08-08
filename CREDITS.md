@@ -1,6 +1,6 @@
 # Credits
 
-Dedicated to the memory of
+Dedicated to the loving memory of
 
 Basile Papadopoulos
 and
@@ -122,6 +122,41 @@ Invented the World Wide Web and HTTP, which this app's retro browser speaks
 **Tim Berners-Lee and the W3C**
 Authors of libwww, the reference HTTP library the retro browser is built on
 
+### The NABU Network
+
+**NABU Manufacturing Corporation** (Ottawa, 1982-1985)
+Built the NABU Personal Computer and ran the first consumer network computer
+service, delivering software and pages over cable television
+
+**brijohn**
+Author of the NABU PC emulation driver the NABU tab's bundled emulator is
+built from
+
+**S. V. Nickolas** (buricco)
+Author of Marduk, the NABU emulator the in-window NABU Native tab is a port
+of, and of OpenNabu IPL, the openly licensed replacement boot firmware that
+tab starts the machine on. Both are MIT. The Suite's own MGT IPL is a fork
+of the latter, cut down to load the channel and nothing else, and it is his
+work that made a NABU tab possible without a line of preserved firmware
+
+**Marcin Wołoszczuk** (zdebel)
+Co-author of Marduk's NABU emulation
+
+**Nicolas Allemand**, **Troy Schrapel** and **Mitsutaka Okazaki**
+Authors of the Z80, TMS9918 and AY-3-8910 emulation cores that Marduk
+carries and the NABU Native tab therefore runs on. All three are MIT
+
+**Jason R. Thorpe**
+Author of nabud, the adaptor server the Montreal Greek Times NABU channel
+runs on. No nabud code is in the Suite, but its source is what settled the
+channel-change exchange and the native serial rate. See
+`THIRD-PARTY-NOTICES.md`
+
+**The NABU preservation community**
+The Vintagecomputer.ca archive, **Leo Binkowski**, and NabuNetwork.com, who
+dumped and published the NABU boot ROMs. Without that work there would be
+nothing to boot
+
 ### Newspaper reader
 
 **The Internet Archive**
@@ -136,6 +171,18 @@ Full licence texts are in `THIRD-PARTY-NOTICES.md` and the `licenses/`
 directory. The components are freeWAIS-sf (CNIDR, 1993), W3C libwww 5.4.1,
 FFmpeg TrueSpeech (LGPL 2.1 or later), minimp3 (CC0), the Ubuntu Font, the
 Microsoft WebView2 SDK, and the Internet Archive BookReader (AGPLv3).
+
+The NABU Native tab links in the emulation core of Marduk (MIT), together
+with the Z80, TMS9918 and AY-3-8910 cores it carries, and boots the machine
+on MGT IPL, the Suite's fork of OpenNabu IPL (MIT). Those are compiled into
+the Suite itself rather than launched beside it.
+
+The NABU tab additionally bundles a NABU-only build of MAME 0.250
+(GPL-2.0-or-later, Copyright (c) 1997-2022 MAMEdev and contributors) as a
+SEPARATE PROGRAM, launched as its own process and never linked into the Suite,
+together with the preserved NABU boot ROMs. See `THIRD-PARTY-NOTICES.md` for
+the licence, the written offer for the corresponding source, and the ROM
+preservation credit.
 
 ---
 

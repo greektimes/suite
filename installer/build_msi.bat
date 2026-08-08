@@ -23,13 +23,7 @@ setlocal EnableDelayedExpansion
 
 set HERE=%~dp0
 set ROOT=%HERE%..
-@REM 2026-08-03 CI portability, same reasoning as in build_x64.bat: the
-@REM caller may point MSYS2_UCRT64 at a non-Z840 MSYS2. gcc is used here
-@REM only as the C preprocessor that reads the version back out of
-@REM src\suite_version.h, but it must be the SAME compiler, so the two
-@REM scripts resolve it the same way.
-if not defined MSYS2_UCRT64 set MSYS2_UCRT64=C:\msys64\ucrt64
-set CC=%MSYS2_UCRT64%\bin\gcc.exe
+set CC=C:\msys64\ucrt64\bin\gcc.exe
 set WIX=wix
 set PAYLOAD=%HERE%payload
 set OUTDIR=%HERE%out
@@ -115,33 +109,92 @@ if exist "%PAYLOAD%" rmdir /s /q "%PAYLOAD%"
 mkdir "%PAYLOAD%"
 mkdir "%PAYLOAD%\LICENSES"
 
-@REM 2026-08-03 WebView2Loader.dll, resolved rather than assumed.
-@REM
-@REM The Z840 working tree keeps a copy of the loader at the repository
-@REM root, next to the exe it sits beside once installed. That root copy
-@REM is NOT in the repository: .gitignore's *.dll-adjacent rules never
-@REM covered it and it was simply never added. What IS tracked is the
-@REM vendored SDK's own copy under third_party, and the two are byte
-@REM identical (verified 2026-08-03).
-@REM
-@REM So: prefer the root copy when it is there, which keeps the Z840
-@REM build taking exactly the file it always took, and fall back to the
-@REM tracked SDK copy, which is what a clean checkout has. Without this
-@REM the MSI cannot be built from a fresh clone at all.
-set WV2LOADER=%ROOT%\WebView2Loader.dll
-if not exist "%WV2LOADER%" set WV2LOADER=%ROOT%\third_party\webview2\build\native\x64\WebView2Loader.dll
-if not exist "%WV2LOADER%" (
-    echo ERROR: WebView2Loader.dll not found at the repository root or in
-    echo        third_party\webview2\build\native\x64.
-    exit /b 1
-)
-
 copy /y "%ROOT%\MGT_Unicorn_Suite_x64.exe" "%PAYLOAD%\" >nul || exit /b 1
-copy /y "%WV2LOADER%" "%PAYLOAD%\WebView2Loader.dll"    >nul || exit /b 1
+copy /y "%ROOT%\WebView2Loader.dll"        "%PAYLOAD%\" >nul || exit /b 1
 copy /y "%ROOT%\README.TXT"                "%PAYLOAD%\README.TXT"  >nul || exit /b 1
 copy /y "%ROOT%\COPYING"                   "%PAYLOAD%\LICENSE.TXT" >nul || exit /b 1
 copy /y "%ROOT%\THIRD-PARTY-NOTICES.md"    "%PAYLOAD%\NOTICES.TXT" >nul || exit /b 1
 copy /y "%ROOT%\licenses\*.txt"            "%PAYLOAD%\LICENSES\"   >nul || exit /b 1
+
+@REM ------------------------------------------------------------------
+@REM The NABU emulator package.
+@REM
+@REM This is the NABU-only MAME 0.250 build that was proven against the
+@REM live channel server, plus the preserved NABU boot ROMs it needs. It
+@REM is a SEPARATE PROGRAM, spawned as its own process by the NABU tab
+@REM and never linked into the Suite, which is what keeps its
+@REM GPL-2.0-or-later terms an aggregation question rather than a
+@REM licensing one. See THIRD-PARTY-NOTICES.md for the notice and the
+@REM written offer for the corresponding source.
+@REM
+@REM SOURCE OF TRUTH is NABU_SRC below, the operator's tested package.
+@REM It is NOT in the repository: it is 107 MB, most of it one binary.
+@REM Getting it into the CI build is deferred to the go-live mission,
+@REM which is where fetch-versus-commit gets decided.
+@REM ------------------------------------------------------------------
+if not defined NABU_SRC set "NABU_SRC=C:\NABU\nabu-mame\nabu-mame"
+if not exist "%NABU_SRC%\mame.exe" (
+    echo ERROR: the NABU emulator package was not found at %NABU_SRC%
+    echo        Set NABU_SRC to the folder containing mame.exe, or install
+    echo        the tested package there.
+    exit /b 1
+)
+echo Staging the NABU emulator package from %NABU_SRC% ...
+mkdir "%PAYLOAD%\NABU"
+@REM /E subdirectories including empty, /I treat target as a directory,
+@REM /Y overwrite without prompting, /Q quiet. The disks folder is
+@REM excluded: the tab boots from the network channel, never a floppy
+@REM image, and those two images are the only files in the package the
+@REM Suite has no path to.
+xcopy "%NABU_SRC%\*" "%PAYLOAD%\NABU\" /E /I /Y /Q /EXCLUDE:%HERE%nabu_exclude.txt >nul
+if errorlevel 1 (
+    echo ERROR: could not stage the NABU emulator package
+    exit /b 1
+)
+if not exist "%PAYLOAD%\NABU\roms\nabupc" (
+    echo ERROR: the NABU boot ROMs are missing from the staged package
+    exit /b 1
+)
+
+@REM ------------------------------------------------------------------
+@REM The NABU Native tab's boot firmware.
+@REM
+@REM These two images go in the ROOT of NABU\, not under roms\, because
+@REM that is where src\nabu_native_module.c looks for them. Its candidate
+@REM list is relative to the folder holding the exe and reads, in order:
+@REM
+@REM     NABU\mgtipl.bin                    <- installed, preferred
+@REM     firmware\mgtipl\mgtipl.bin         <- source tree
+@REM     NABU\opennabu.bin                  <- installed, fallback
+@REM     third_party\opennabu\opennabu.bin  <- source tree
+@REM
+@REM Up to and including 0.4.0 the installer staged NEITHER, and only the
+@REM two source-tree paths existed, so a built exe run from the working
+@REM copy found firmware and an INSTALLED one found none at all. The
+@REM native tab could not boot after an install. Fixed for 0.5.0; the
+@REM checks below are what keep it fixed, because both files are produced
+@REM elsewhere (mgtipl.bin is assembled on the Unicorn server) and a
+@REM missing one would otherwise be silent until someone pressed Connect.
+@REM
+@REM No wxs change is needed: the NabuFiles group harvests
+@REM $(PayloadDir)\NABU\** wholesale.
+@REM
+@REM Both are MIT, by S. V. Nickolas. See THIRD-PARTY-NOTICES.md and
+@REM LICENSES\LICENSE.opennabu.txt, which ships beside them.
+@REM ------------------------------------------------------------------
+echo Staging the NABU Native boot firmware...
+if not exist "%ROOT%\firmware\mgtipl\mgtipl.bin" (
+    echo ERROR: MGT IPL is missing at firmware\mgtipl\mgtipl.bin
+    echo        Assemble it per docs\2026-08-07_NABU_MGT_IPL_FAST_BOOT.md
+    exit /b 1
+)
+if not exist "%ROOT%\third_party\opennabu\opennabu.bin" (
+    echo ERROR: the stock OpenNabu fallback is missing at
+    echo        third_party\opennabu\opennabu.bin
+    exit /b 1
+)
+copy /y "%ROOT%\firmware\mgtipl\mgtipl.bin"        "%PAYLOAD%\NABU\mgtipl.bin"   >nul || exit /b 1
+copy /y "%ROOT%\third_party\opennabu\opennabu.bin" "%PAYLOAD%\NABU\opennabu.bin" >nul || exit /b 1
 
 @REM CREDITS.TXT is generated from CREDITS.md so the two cannot drift.
 python "%ROOT%\make_credits_txt.py" "%ROOT%\CREDITS.md" "%PAYLOAD%\CREDITS.TXT"

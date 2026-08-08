@@ -806,6 +806,34 @@ static void rip_close_session(void)
     g_esc_state = 0;
     g_zsig_len  = 0;
     if (g_capture) { fclose(g_capture); g_capture = NULL; }
+
+    /*
+     * BACK TO THE BLANK CANVAS.
+     *
+     * g_ever_drew is what the paint path tests before blitting the
+     * retained scene, and until 2026-08-08 nothing cleared it on the way
+     * out: only rip_do_connect did, on the way back in. So a session that
+     * ended left its last frame frozen on the canvas until somebody
+     * connected again, which reads as a live screen that has simply
+     * stopped responding rather than as a tab with no session.
+     *
+     * Clearing it here rather than at any one caller is the whole point.
+     * This function is the single teardown, and all four ways a session
+     * can end arrive at it: the Disconnect button calls it directly, and
+     * the in-screen door icon, the Q key and any server-side drop all
+     * surface as TELNET_EVT_CLOSED, which rip_on_closed turns into this
+     * same call. telnet_proto posts CLOSED unconditionally, including
+     * after an ERROR, so there is no ending that misses it.
+     *
+     * The retained surface itself is deliberately left alone, exactly as
+     * the NABU tab leaves its last DIB alone when it drops g_have_frame.
+     * It is invisible with the flag down, rip_do_connect reinitialises
+     * the parser and the surface for every new session anyway, and
+     * touching parse or render state during teardown would be reaching
+     * outside what a teardown is for.
+     */
+    g_ever_drew = FALSE;
+
     rip_set_session_ui(FALSE);
 }
 
@@ -1116,6 +1144,15 @@ static LRESULT CALLBACK RipCanvasProc(HWND hwnd, UINT msg,
         /* rip_canvas_paint owns the whole rect, background included. */
         return 1;
 
+    /* Belt to the class styles' braces, and the one that matters when a
+     * size change also moves the window: the system preserves and blits
+     * the old client bits to the new position, which is the shifted,
+     * part-black frame seen for one beat on restore. Discarding the
+     * whole rect here means the next paint is a full, correct compose. */
+    case WM_SIZE:
+        InvalidateRect(hwnd, NULL, FALSE);
+        return 0;
+
     /* Custom-painted children in this shell must claim all keys or
      * IsDialogMessage swallows letters through its mnemonic search. */
     case WM_GETDLGCODE:
@@ -1328,6 +1365,13 @@ static void rip_register_classes(HINSTANCE hInst)
     if (!g_canvas_class_reg) {
         ZeroMemory(&wc, sizeof wc);
         wc.cbSize        = sizeof wc;
+        /* The canvas scales one fixed 640x350 surface into whatever the
+         * client rect happens to be, so every pixel of it depends on the
+         * client size. Without these two styles a grow only invalidates
+         * the newly exposed strips, the old-scale render stays valid in
+         * the top-left, and the two scales composite on screen. This is
+         * the same pair the Gopher render and image classes carry. */
+        wc.style         = CS_HREDRAW | CS_VREDRAW;
         wc.lpfnWndProc   = RipCanvasProc;
         wc.hInstance     = hInst;
         wc.hCursor       = LoadCursorA(NULL, (LPCSTR)IDC_ARROW);
@@ -1373,6 +1417,13 @@ void ripscrip_module_resize(HWND content, int w, int h)
     canvas_y = 52;
     MoveWindow(g_hCanvas, margin, canvas_y,
                w - 2 * margin, h - canvas_y - margin, TRUE);
+    /* Repaint the scaled scene inside the resize rather than on the next
+     * trip through the message loop, so the frame the user sees after a
+     * maximize or a restore is already the correct one. */
+    if (g_hCanvas) {
+        InvalidateRect(g_hCanvas, NULL, FALSE);
+        UpdateWindow(g_hCanvas);
+    }
 }
 
 void ripscrip_module_activate(HWND content)

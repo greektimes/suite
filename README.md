@@ -4,21 +4,28 @@ The official Windows app of The Montreal Greek Times. Watch Montreal Greek
 Television live, listen to Montreal Greek Radio, read the newspaper, and follow
 the news of the Greek community of Greater Montreal.
 
-[![download](https://img.shields.io/badge/download-v0.4.0--beta-blue)](https://github.com/greektimes/suite/releases)
+[![download](https://img.shields.io/badge/download-v0.5.0--beta-blue)](https://github.com/greektimes/suite/releases)
 [![license](https://img.shields.io/badge/license-AGPL--3.0-blue)](https://github.com/greektimes/suite/blob/main/COPYING)
 
 ---
 
 ## Status
 
-**v0.4.0-beta**, 3 August 2026. Beta: usable, and still changing.
+**v0.5.0-beta**, 8 August 2026. Beta: usable, and still changing.
 
-New in this release:
+New in this release, all of it NABU:
 
-- A **Windows installer (MSI)**, replacing the unzip-anywhere archive.
-- **Built-in updates**, so future versions arrive automatically.
-- A native **RIPscrip renderer** for the retro graphics pages.
-- **Zmodem file downloads** over Telnet.
+- A **built-in NABU emulator**. The NABU tab is now an emulated NABU
+  Personal Computer running inside the app's own window, booting the
+  Montreal Greek Times NABU channel in seconds.
+- **Fast-boot firmware.** The emulated machine boots on MGT IPL, this
+  project's fork of OpenNabu IPL, which skips the floppy, hard disk and
+  memory checks a machine with none of those does not need. It reaches
+  the channel in under half a second where stock firmware takes ten.
+- **Any NABU server.** Point the tab at a host and port of your choice.
+- **Real NABU hardware.** If you own a NABU, the Suite can act as its
+  Internet Adapter over a serial cable, so the actual machine boots its
+  own ROM against a channel server.
 
 ---
 
@@ -39,14 +46,15 @@ Four things, on four tabs:
 | where | link |
 | --- | --- |
 | GitHub | https://github.com/greektimes/suite/releases |
-| FTP | ftp://ftp.greektimes.ca/pub/suite/MGT_Unicorn_Suite_0.4.0.msi |
+| FTP | ftp://ftp.greektimes.ca/pub/suite/MGT_Unicorn_Suite_0.5.0.msi |
 | Gopher | gopher://gopher.greektimes.ca/1/software |
 
-Run `MGT_Unicorn_Suite_0.4.0.msi`. It installs to Program Files for all users
+Run `MGT_Unicorn_Suite_0.5.0.msi`. It installs to Program Files for all users
 and adds a Start Menu entry; the desktop shortcut is optional and can be turned
 off during setup. Uninstall from Settings, Apps and features.
 
-The app checks for its own updates: **Help**, then **Update**.
+The app checks for its own updates: **Help**, then **Update**. An installed
+v0.4.0-beta will offer this release as an in-place upgrade.
 
 ---
 
@@ -69,9 +77,23 @@ took over. It is not needed to watch television or read the paper.
 Each tab speaks to a live server run by the MGT Unicorn project, answering the
 real protocol rather than imitating it.
 
+The NABU tab is the one exception, and deliberately so. A NABU Personal
+Computer is a Z80 machine, and the honest way to show one is to emulate one.
+That emulation runs inside the Suite's own window: it is the Marduk emulation
+core, with its Z80, TMS9918 and AY-3-8910 chip cores, compiled in and booting
+on MGT IPL, this project's fork of OpenNabu IPL. All of it is MIT, and all of
+it is vendored in this repository under `third_party/marduk`,
+`third_party/opennabuipl` and `firmware/mgtipl`, with every local change
+documented. See [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
+
+The same tab can drive real hardware. Given a serial cable, the Suite acts as
+a NABU Internet Adapter, and a genuine NABU boots its own ROM against a
+channel server.
+
 | tab | protocol | default server |
 | --- | --- | --- |
-| Unicorn Desktop | Active Channel style desktop | greektimes.ca |
+| RIPscrip | RIPscrip 1.54 vector graphics over Telnet | ripscrip.greektimes.ca:23 |
+| NABU | NABU adapter protocol over TCP, emulated in-window | nabu.greektimes.ca:5816 |
 | Retro Web Browser | HTTP, W3C libwww 5.4.1 | http://retro.greektimes.ca/ |
 | Gopher | RFC 1436 | gopher.greektimes.ca:70 |
 | ARPANET FTP-Mail | RFC 765 and RFC 691 | arpanet.greektimes.ca:2121, INFO@GREEKTIMES |
@@ -79,7 +101,6 @@ real protocol rather than imitating it.
 | Archie | Prospero ARDP over UDP | archie.greektimes.ca:1525, telnet on 2323 |
 | IRC | RFC 1459, read-only view | irc.greektimes.ca:6667, channel `#retro` |
 | CU-SeeMe Live TV | Cornell CU-SeeMe over UDP | cu-seeme.greektv.ca:7648 |
-| RIPscrip | RIPscrip 1.54 vector graphics over Telnet | ripscrip.greektimes.ca:23 |
 | Terminal | Telnet VT220, with Finger, QOTD and Zmodem | telnet.greektimes.ca |
 
 ---
@@ -187,7 +208,7 @@ The protocol authors and the projects this is built on are named in
 
 ---
 
-Dedicated to the memory of
+Dedicated to the loving memory of
 
 Basile Papadopoulos
 and

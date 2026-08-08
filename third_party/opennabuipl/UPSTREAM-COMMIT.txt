@@ -1,0 +1,14 @@
+Upstream: https://github.com/buricco/opennabuipl
+Commit:   822ef201df58b0140d1b4c3713db8642e6333471
+Subject:  Further optimization
+Date:     Wed Jul 5 19:31:28 2023 -0400
+Vendored: 2026-08-07
+
+sha256 of the vendored files as taken from that commit:
+
+  opennabu.a80  bc91e62a193dd67cd63bf6cac6cafd134511ae815c4345e42f789998bb1615f5
+  license.txt   b7c198a3926bf8a837a065956290473d9e2dfc6e13d9258dff4e580284718099
+
+Assembled with Debian z80asm 1.8 this source produces a 4096-byte image:
+
+  opennabu.bin  44ee0854bb85896afbf056503e7a19efff250999f0885f227836e9bb9fa2fedd
