@@ -65,6 +65,7 @@ typedef struct suite_module {
  * 2026-08-07. The id is left unused rather than recycled, so an old
  * WM_COMMAND from anywhere cannot land on a different tab. */
 #define SUITE_ID_BTN_NABUNAT  (SUITE_ID_BTN_BASE + 11)
+#define SUITE_ID_BTN_NAPLPS   (SUITE_ID_BTN_BASE + 12)
 
 /* Amendment 4: drag-resize gate. The shell sets a flag while the user
  * is in a continuous window-edge drag (WM_ENTERSIZEMOVE ..
@@ -192,6 +193,16 @@ void nabu_native_module_deactivate(HWND content);
 void nabu_native_module_resize(HWND content, int w, int h);
 BOOL nabu_native_module_on_command(HWND content, WPARAM wParam, LPARAM lParam);
 BOOL nabu_native_module_has_unsaved(void);
+
+/* NAPLPS (videotex). A clean-room videotex terminal: the decoder and the
+ * 256x200 SRM raster are in naplps_decode.[ch] and naplps_surface.[ch],
+ * derived from ANSI X3.110-1983 / CSA T500-1983. Opens local .nap frames
+ * and connects over the shared telnet transport. */
+void naplps_module_activate(HWND content);
+void naplps_module_deactivate(HWND content);
+void naplps_module_resize(HWND content, int w, int h);
+BOOL naplps_module_on_command(HWND content, WPARAM wParam, LPARAM lParam);
+BOOL naplps_module_has_unsaved(void);
 
 /* Archie Search (native Prospero/ARDP client, tab immediately after WAIS). */
 void archie_module_activate(HWND content);

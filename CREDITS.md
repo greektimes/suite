@@ -157,6 +157,71 @@ The Vintagecomputer.ca archive, **Leo Binkowski**, and NabuNetwork.com, who
 dumped and published the NABU boot ROMs. Without that work there would be
 nothing to boot
 
+### NAPLPS videotex
+
+**The joint ANSI X3L2.1 Task Group and CSA Working Group on Videotex**
+Authors of ANSI X3.110-1983 / CSA T500-1983, "Videotex/Teletext Presentation
+Level Protocol Syntax (North American PLPS)", published December 1983. The
+Suite's NAPLPS decoder is a clean-room implementation written from that
+standard. No NAPLPS decoder or renderer source was copied or adapted
+
+**The Canadian Communications Research Centre** and **Norpak Corporation**
+(Kanata, Ontario)
+Developers of Telidon, the Canadian videotex system the North American PLPS
+grew out of, and of the decoder hardware that made it a product
+
+**Bell Canada**
+Ran Alex, the Montreal videotex service, from 1988 to 1994. Its ALEXTEL
+terminal, designed by Norpak and manufactured by Northern Telecom, is the
+compatibility target this tab is built toward. Alex and Alextel are named
+here as historical context and as that target, not as branding
+
+**Nick Fox-Gieg**
+Author of naplps.js (MIT), used as an independent black-box cross-check
+oracle while this decoder was written, and of the annotated sample frame
+that the segmentation gate is measured against. No code was ported
+
+**Microstar Software Ltd.** (Nepean, Ontario, 1992)
+Authors of Personality+III, the period NAPLPS terminal used as a black-box
+rendering oracle, and of its README, which is the only source found for the
+ALEXTEL emulation profile: a 7 data bit, even parity, 1 stop bit character
+frame, the ESC % A and ESC % @ presentation mode switch, and the default
+function key sequences
+
+**John Durno**, University of Victoria Libraries
+Author of the two technical notes on displaying and interacting with NAPLPS
+graphics on a modern computer, which established the DOSBox and virtual
+serial method the real-client gate uses
+
+### Minitel videotex (the Videotex tab's Minitel mode)
+
+**France Telecom**
+Authors of the "Specifications Techniques d'Utilisation du Minitel 1B"
+(STUM1B). The Suite's Minitel decoder is a clean-room implementation
+written from that specification, its code tables read from the scanned
+pages. No Minitel decoder, emulator or emitter source was read, copied or
+adapted
+
+**The volunteer transcribers of STUM1B** at jbellue.github.io/stum1b,
+whose HTML transcription was used as a reading aid beside the scan
+
+**Jean-Francois Del Nero**
+Author of VDT2BMP, used as a black-box rendering oracle: the same pages in,
+BMPs out, compared cell by cell. No code was read or used
+
+**Dylan "Asphox" Soton**
+Author of eMinitel (MIT), used as a black-box oracle by earlier gates and
+assessed for reuse from its README and licence. It was not reused (the
+reasons are in `docs/2026-09-27_SUITE_MINITEL_MODE.md`), and no code of it
+is in the Suite
+
+**Frederic Bisson** and **the MiniPavi project**
+Authors of the Minitel web emulator MiniPavi hosts, run as a black-box
+oracle in a browser; its key map is the model for the tab's PC keys, and
+the tab's CRT scan lines reproduce its Scanlines effect as measured from
+its rendered pixels (switch on and off, same page). No code was read or
+used
+
 ### Newspaper reader
 
 **The Internet Archive**
@@ -176,6 +241,14 @@ The NABU Native tab links in the emulation core of Marduk (MIT), together
 with the Z80, TMS9918 and AY-3-8910 cores it carries, and boots the machine
 on MGT IPL, the Suite's fork of OpenNabu IPL (MIT). Those are compiled into
 the Suite itself rather than launched beside it.
+
+The NAPLPS (videotex) tab contains NO third-party code at all. Its decoder
+and raster are clean-room from ANSI X3.110-1983 / CSA T500-1983, its 5x7
+glyphs are original work for this project, and naplps.js and
+Personality+III were used only as black-box oracles, which ships none of
+them and so owes no notice. The standard itself is an ANSI and CSA
+copyrighted document held outside the repository as a reference copy, in
+the same way RIPSCRIP-1.54.DOC is held, and is not redistributed.
 
 The NABU tab additionally bundles a NABU-only build of MAME 0.250
 (GPL-2.0-or-later, Copyright (c) 1997-2022 MAMEdev and contributors) as a

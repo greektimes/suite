@@ -18,6 +18,7 @@
 #include "irc_module.h"
 #include "archie_module.h"
 #include "ripscrip_module.h"
+#include "naplps_module.h"
 #include "nabu_native_module.h"
 #include "mode_toggle.h"
 #include "modern_mode.h"
@@ -86,10 +87,15 @@
 #define ID_BTN_ARCHIE   SUITE_ID_BTN_ARCHIE
 #define ID_BTN_RIPSCRIP SUITE_ID_BTN_RIPSCRIP
 #define ID_BTN_NABUNAT  SUITE_ID_BTN_NABUNAT
+#define ID_BTN_NAPLPS   SUITE_ID_BTN_NAPLPS
 /* 2026-08-07: was 11. The external-player NABU tab was retired and the
  * in-Suite port took its place and its name, so there is one NABU row
  * now instead of two. */
-#define ID_MODULE_COUNT 10
+/* 2026-09-25: 10 -> 11 with the NAPLPS (videotex) tab.
+ * 2026-09-27: UNCHANGED at 11. That tab became "Videotex" with a Format
+ * dropdown (NAPLPS or Minitel): one tab, two formats (operator decision
+ * D-M5), so the module table grows by zero. */
+#define ID_MODULE_COUNT 11
 
 #define ID_HELP_ABOUT   200   /* Help > About (mouse / Alt+H mnemonic) */
 #define ID_HELP_UPDATE  201   /* Help > Check for Updates              */
@@ -141,6 +147,10 @@ static const suite_module_t g_modules[ID_MODULE_COUNT] = {
       nabu_native_module_activate, nabu_native_module_deactivate,
       nabu_native_module_resize,   nabu_native_module_on_command,
       nabu_native_module_has_unsaved },
+    { "Videotex",                  ID_BTN_NAPLPS,
+      naplps_module_activate, naplps_module_deactivate,
+      naplps_module_resize,   naplps_module_on_command,
+      naplps_module_has_unsaved },
     { "Retro Web\nBrowser",        ID_BTN_WEB,
       web_module_activate, web_module_deactivate,
       web_module_resize, web_module_on_command,
@@ -844,6 +854,32 @@ static LRESULT CALLBACK SuiteWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
         if (g_hwndContent) layout_children(hwnd);
         return 0;
 
+    /*
+     * 2026-09-27: KEEP THE KEYBOARD FOCUS ACROSS ALT-TAB. Without this,
+     * DefWindowProc gives the focus to the main window itself whenever
+     * the Suite is activated again, so after switching to another program
+     * and back, the control that had the focus (the Minitel screen, the
+     * Terminal, an edit field) no longer gets the keys: they go to the
+     * main window and are lost until something is clicked. Found as the
+     * unexplained episode of the Minitel live gate
+     * (docs/2026-09-27_SUITE_MINITEL_MODE.md, section 7.3). The standard
+     * remedy: remember the focus on deactivation, give it back on
+     * activation.
+     */
+    case WM_ACTIVATE: {
+        static HWND s_focus = NULL;
+        if (LOWORD(wParam) == WA_INACTIVE) {
+            HWND f = GetFocus();
+            if (f && IsChild(hwnd, f)) s_focus = f;
+        } else if (!HIWORD(wParam) && s_focus && IsWindow(s_focus)
+                   && IsChild(hwnd, s_focus) && IsWindowVisible(s_focus)
+                   && IsWindowEnabled(s_focus)) {
+            SetFocus(s_focus);
+            return 0;
+        }
+        break;
+    }
+
     case WM_GETMINMAXINFO: {
         MINMAXINFO *mmi = (MINMAXINFO *)lParam;
         mmi->ptMinTrackSize.x = MulDiv(MIN_WINDOW_W, g_dpi, 96);
@@ -948,6 +984,7 @@ static LRESULT CALLBACK SuiteWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
         switch (wmId) {
         case ID_BTN_RIPSCRIP:
         case ID_BTN_NABUNAT:
+        case ID_BTN_NAPLPS:
         case ID_BTN_WEB:
         case ID_BTN_GOPHER:
         case ID_BTN_ARPAMAIL:
@@ -1158,6 +1195,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrev, LPSTR lpCmdLine, int nShow)
 
     suite_update_shutdown();
     ripscrip_module_shutdown();
+    naplps_module_shutdown();
     nabu_native_module_shutdown();
     irc_module_shutdown();
     cuseeme_module_shutdown();

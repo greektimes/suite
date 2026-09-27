@@ -119,7 +119,7 @@ for %%f in (sockets_win win_stubs) do (
 )
 
 echo Compiling Suite shell and modules...
-for %%f in (suite_shell suite_fonts suite_branding suite_clipboard suite_logo http_fetch suite_sha256 suite_update audio_format_detect wav_parser tsp_metafile truespeech_decoder wais_module arpamail_module archie_ardp archie_module ftp_fetch vt_term telnet_proto finger_proto qotd_proto telnet_module irc_client irc_module rip_ega rip_parser rip_text rip_button rip_hershey_data rip_font8x8_data ripscrip_module cuseeme_proto cuseeme_video cuseeme_deltamod cuseeme_mulaw cuseeme_idvi cuseeme_module player_service mode_toggle placeholder_module modern_mode livetv_module audio_meter_service radio_engine liveradio_module) do (
+for %%f in (suite_shell suite_fonts suite_branding suite_clipboard suite_logo http_fetch suite_sha256 suite_update audio_format_detect wav_parser tsp_metafile truespeech_decoder wais_module arpamail_module archie_ardp archie_module ftp_fetch vt_term telnet_proto finger_proto qotd_proto telnet_module irc_client irc_module rip_ega rip_parser rip_text rip_button rip_hershey_data rip_font8x8_data ripscrip_module naplps_surface naplps_decode naplps_font_data naplps_module minitel_decode minitel_screen minitel_font_data minitel_view cuseeme_proto cuseeme_video cuseeme_deltamod cuseeme_mulaw cuseeme_idvi cuseeme_module player_service mode_toggle placeholder_module modern_mode livetv_module audio_meter_service radio_engine liveradio_module) do (
     echo   %%f.c
     %CC% %CFLAGS_SUITE% -c -o src\%%f.o src\%%f.c
     if errorlevel 1 exit /b 1
@@ -243,6 +243,10 @@ echo Linking %TARGET%...
     src\rip_ega.o src\rip_parser.o src\rip_text.o src\rip_button.o ^
     src\rip_hershey_data.o src\rip_font8x8_data.o ^
     src\ripscrip_module.o ^
+    src\naplps_surface.o src\naplps_decode.o ^
+    src\naplps_font_data.o src\naplps_module.o ^
+    src\minitel_decode.o src\minitel_screen.o ^
+    src\minitel_font_data.o src\minitel_view.o ^
     src\nabu_core.o src\nabu_native_module.o ^
     src\nabu_channel.o src\nabu_serial.o ^
     third_party\marduk\z80.o third_party\marduk\tms9918.o ^
