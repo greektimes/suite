@@ -4,16 +4,36 @@ The official Windows app of The Montreal Greek Times. Watch Montreal Greek
 Television live, listen to Montreal Greek Radio, read the newspaper, and follow
 the news of the Greek community of Greater Montreal.
 
-[![download](https://img.shields.io/badge/download-v0.5.0--beta-blue)](https://github.com/greektimes/suite/releases)
+[![download](https://img.shields.io/badge/download-v0.6.0--beta-blue)](https://github.com/greektimes/suite/releases/tag/v0.6.0-beta)
 [![license](https://img.shields.io/badge/license-AGPL--3.0-blue)](https://github.com/greektimes/suite/blob/main/COPYING)
 
 ---
 
 ## Status
 
-**v0.5.0-beta**, 8 August 2026. Beta: usable, and still changing.
+**v0.6.0-beta**, 27 September 2026. Beta: usable, and still changing.
 
-New in this release, all of it NABU:
+New in this release:
+
+- The **Videotex tab**, a terminal for the two videotex formats of the
+  1980s, chosen with its Format menu. Both decoders were written for this
+  project from the published specifications, and both connect to the
+  videotex edition of The Montreal Greek Times at videotex.greektimes.ca.
+  - **Minitel**, the French Teletel terminal, and the default: a Minitel
+    1B screen of 40 columns by 25 rows; the Minitel's own keyboard on
+    screen (SOMMAIRE, ANNULATION, RETOUR, REPETITION, GUIDE, CORRECTION,
+    SUITE and ENVOI, CONNEXION/FIN, and a numeric keypad), with PC
+    keyboard equivalents; the Minitel 1B's grey monochrome by default;
+    and CRT scan lines, on by default, with a Scanlines checkbox.
+  - **NAPLPS**, the North American format of Bell Canada's Alex service:
+    drawn pages on the 256 x 200 videotex raster, with the Alextel
+    function keys.
+- **Keyboard focus after Alt-Tab.** Switching to another program and
+  back now returns the focus to the control that had it, in every tab.
+  Before, the keys went to the main window and were lost until something
+  was clicked.
+
+New in 0.5.0-beta, all of it NABU:
 
 - A **built-in NABU emulator**. The NABU tab is now an emulated NABU
   Personal Computer running inside the app's own window, booting the
@@ -31,13 +51,15 @@ New in this release, all of it NABU:
 
 ## What it does
 
-Four things, on four tabs:
+Four things, on four tabs, in the app's everyday mode:
 
 - **Live TV** streams Montreal Greek Television.
 - **Live Radio** streams Montreal Greek Radio.
 - **Newspaper** opens the print edition of The Montreal Greek Times in a
   page-turning reader, with back issues.
 - **Website** opens greektimes.ca inside the app.
+
+Retro Mode, described below, adds eleven more tabs.
 
 ---
 
@@ -46,15 +68,15 @@ Four things, on four tabs:
 | where | link |
 | --- | --- |
 | GitHub | https://github.com/greektimes/suite/releases |
-| FTP | ftp://ftp.greektimes.ca/pub/suite/MGT_Unicorn_Suite_0.5.0.msi |
+| FTP | ftp://ftp.greektimes.ca/pub/suite/MGT_Unicorn_Suite_0.6.0.msi |
 | Gopher | gopher://gopher.greektimes.ca/1/software |
 
-Run `MGT_Unicorn_Suite_0.5.0.msi`. It installs to Program Files for all users
+Run `MGT_Unicorn_Suite_0.6.0.msi`. It installs to Program Files for all users
 and adds a Start Menu entry; the desktop shortcut is optional and can be turned
 off during setup. Uninstall from Settings, Apps and features.
 
-The app checks for its own updates: **Help**, then **Update**. An installed
-v0.4.0-beta will offer this release as an in-place upgrade.
+The app checks for its own updates: **Help**, then **Update**. Installing it
+over v0.5.0-beta upgrades it in place.
 
 ---
 
@@ -94,6 +116,7 @@ channel server.
 | --- | --- | --- |
 | RIPscrip | RIPscrip 1.54 vector graphics over Telnet | ripscrip.greektimes.ca:23 |
 | NABU | NABU adapter protocol over TCP, emulated in-window | nabu.greektimes.ca:5816 |
+| Videotex | Minitel (Teletel) or NAPLPS over TCP, chosen by the Format menu | videotex.greektimes.ca, 516 for Minitel, 1983 for NAPLPS |
 | Retro Web Browser | HTTP, W3C libwww 5.4.1 | http://retro.greektimes.ca/ |
 | Gopher | RFC 1436 | gopher.greektimes.ca:70 |
 | ARPANET FTP-Mail | RFC 765 and RFC 691 | arpanet.greektimes.ca:2121, INFO@GREEKTIMES |
@@ -151,7 +174,7 @@ the manifest gives.
 
 ### How binaries are built
 
-The published v0.5.0-beta installer was built by the maintainer on a local
+The published v0.6.0-beta installer was built by the maintainer on a local
 Windows machine, with `build_x64.bat` and then the MSI build script under
 `installer/`, and uploaded from there.
 
@@ -194,7 +217,7 @@ default code paths the Suite contacts only servers operated by The Montreal
 Greek Times and Montreal Greek TV, under `greektimes.ca`, `greektv.ca`, and
 `greekradio.ca`: live TV and radio, the newspaper reader, and the historical
 protocol services (Gopher, Telnet, WAIS, Archie, IRC, CU-SeeMe, ARPANET
-FTP-Mail, RIPscrip, Finger, QOTD, and FTP).
+FTP-Mail, RIPscrip, NABU, Videotex, Finger, QOTD, and FTP).
 
 Two honest exceptions. First, the Website and Newspaper tabs use Microsoft's
 WebView2, a full browser control that loads real web pages and will fetch

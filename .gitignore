@@ -153,3 +153,13 @@ MGT_Unicorn_Suite_x64.exe
 /installer/art/
 *.wixpdb
 tools/__pycache__/
+
+# The web Minitel terminal's build output (web/minitel/build.bat). Added
+# 2026-09-27, phase W1. IGNORED ON PURPOSE: dist/ is generated entirely
+# from tracked sources (web/minitel/site/, web/minitel/engine/, and the
+# Suite's own src/minitel_*.c and src/naplps_font_data.c) by a PINNED
+# toolchain (Emscripten 6.0.10, refused otherwise), and two builds were
+# proven byte-identical. Tracking engine.wasm would put a binary that can
+# drift from its source into a repository whose AGPL source offer is the
+# point; the deploy (phase W2) builds, or copies a named build.
+/web/minitel/dist/

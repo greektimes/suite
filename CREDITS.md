@@ -222,6 +222,21 @@ the tab's CRT scan lines reproduce its Scanlines effect as measured from
 its rendered pixels (switch on and off, same page). No code was read or
 used
 
+### Web Minitel terminal (web/minitel/, phase W1)
+
+**The Emscripten authors**
+Emscripten 6.0.10 compiles the Suite's own Minitel decoder and renderer,
+unchanged, to WebAssembly for the web terminal; the page it builds carries
+small parts of Emscripten's runtime (MIT or University of Illinois/NCSA),
+of musl libc (MIT) and of LLVM compiler-rt (Apache 2.0 with LLVM
+Exceptions). Licence texts: `web/minitel/site/third-party-licenses.txt`,
+served beside the page
+
+**Jean-Arthur Silve** and **the MiniPavi project**
+Author of the MiniPavi gateway (GPL), of which the estate runs its own copy
+at wss://videotex.greektimes.ca/ws; the web terminal connects to it. It
+runs on the server and no code of it is in the page
+
 ### Newspaper reader
 
 **The Internet Archive**
@@ -236,6 +251,11 @@ Full licence texts are in `THIRD-PARTY-NOTICES.md` and the `licenses/`
 directory. The components are freeWAIS-sf (CNIDR, 1993), W3C libwww 5.4.1,
 FFmpeg TrueSpeech (LGPL 2.1 or later), minimp3 (CC0), the Ubuntu Font, the
 Microsoft WebView2 SDK, and the Internet Archive BookReader (AGPLv3).
+
+The web Minitel terminal (`web/minitel/`, not part of the installer) is the
+Suite's own Minitel engine compiled to WebAssembly by Emscripten; the built
+page carries small parts of the Emscripten runtime, musl libc and LLVM
+compiler-rt, whose licences are served with it.
 
 The NABU Native tab links in the emulation core of Marduk (MIT), together
 with the Z80, TMS9918 and AY-3-8910 cores it carries, and boots the machine

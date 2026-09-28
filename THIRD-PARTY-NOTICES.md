@@ -576,3 +576,32 @@ volunteer transcription, and it must never be added to the installer.
 videotex service, used here descriptively for the format the tab
 decodes; they may be trademarks of their owner, and no endorsement is
 implied.
+
+## Emscripten runtime (the web Minitel terminal, web/minitel/)
+
+- What ships, and where: NOT in the Suite executable or the installer.
+  `web/minitel/build.bat` compiles the Suite's own Minitel engine
+  (`src/minitel_decode.c`, `src/minitel_screen.c`,
+  `src/minitel_font_data.c`, `src/naplps_font_data.c`, unchanged) and the
+  glue `web/minitel/engine/mt_web.c` with Emscripten 6.0.10 into
+  `engine.js` and `engine.wasm`, which a web page serves. Those two files
+  contain, besides the Suite's code, small parts of:
+  - Emscripten's JavaScript runtime, C library support and allocator
+    (emmalloc). Copyright (c) 2010-2014 Emscripten authors, see AUTHORS.
+    License: MIT, or the University of Illinois/NCSA Open Source License,
+    at the user's choice.
+  - musl libc. Copyright (C) 2005-2020 Rich Felker, et al. License: MIT.
+  - LLVM compiler-rt builtins. The LLVM Project. License: Apache License
+    v2.0 with LLVM Exceptions (the exception waives the attribution
+    requirement for compiled forms; it is credited anyway).
+- License texts: `web/minitel/site/third-party-licenses.txt`, verbatim
+  from the Emscripten 6.0.10 SDK (its LICENSE,
+  system/lib/libc/musl/COPYRIGHT and system/lib/compiler-rt/LICENSE.TXT),
+  copied into the built site and linked from the page's footer.
+- Toolchain provenance: emsdk tag 6.0.10 (a2b92777), emscripten tag
+  6.0.10 (d6c521a7), installed outside this repository; see
+  `docs/2026-09-27_WEB_MINITEL_W1.md`.
+- The page connects to the estate's own copy of the MiniPavi gateway by
+  Jean-Arthur Silve (GPL), which runs on the server; nothing of it is in
+  this repository or the page. The page's scan lines and key map are the
+  Suite tab's own (see "Minitel mode of the Videotex tab" above).

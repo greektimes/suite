@@ -1,0 +1,115 @@
+<!doctype html>
+<!--
+  Minitel terminal for videotex.greektimes.ca, web edition.
+  Part of the MGT Unicorn Suite. Copyright (C) 2026 Dimitri Papadopoulos
+  and The Montreal Greek Times. Licensed under the GNU Affero General
+  Public License v3.0 or later; the source is at
+  https://github.com/greektimes/suite (web/minitel/).
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self'; connect-src 'self' wss://videotex.greektimes.ca; img-src data:; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="no-referrer">
+<meta name="color-scheme" content="dark">
+<meta name="description" content="THE MONTREAL GREEK TIMES on Minitel: a 40-column videotex terminal in your browser.">
+<title>Minitel | THE MONTREAL GREEK TIMES</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="minitel.css">
+</head>
+<body>
+<main class="term" id="term">
+
+  <header class="masthead">
+    <h1>THE MONTREAL GREEK TIMES</h1>
+    <p>Minitel videotex edition &middot; videotex.greektimes.ca</p>
+  </header>
+
+  <div class="bezel">
+    <div class="screen-wrap" id="screenWrap">
+      <canvas id="screen" width="320" height="250" tabindex="0"
+              aria-label="Minitel screen, 40 columns by 25 rows. Type digits and letters; Enter is ENVOI."></canvas>
+      <button type="button" class="start" id="start" tabindex="-1">
+        <span class="start-title">Minitel</span>
+        <span class="start-go" id="startGo">Tap to connect</span>
+        <span class="start-hint" id="startHint">or press CONNEXION/FIN (F9)</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="status" role="status" aria-live="polite">
+    <span id="statusText">Not connected</span>
+    <span class="counts" id="counts"></span>
+  </div>
+
+  <section class="controls" aria-label="Minitel keyboard">
+    <div class="toprow">
+      <button type="button" class="key fk cnx" data-key="I" tabindex="-1">CONNEXION/FIN</button>
+      <div class="toggles">
+        <label class="toggle"><input type="checkbox" id="optScan" tabindex="-1"><span>Scanlines</span></label>
+        <label class="toggle"><input type="checkbox" id="optMono" tabindex="-1"><span>Monochrome</span></label>
+      </div>
+    </div>
+
+    <div class="keys">
+      <div class="fkeys">
+        <button type="button" class="key fk" data-key="F" tabindex="-1">SOMMAIRE</button>
+        <button type="button" class="key fk" data-key="E" tabindex="-1">ANNULATION</button>
+        <button type="button" class="key fk" data-key="B" tabindex="-1">RETOUR</button>
+        <button type="button" class="key fk" data-key="C" tabindex="-1">REPETITION</button>
+        <button type="button" class="key fk" data-key="D" tabindex="-1">GUIDE</button>
+        <button type="button" class="key fk" data-key="G" tabindex="-1">CORRECTION</button>
+        <button type="button" class="key fk" data-key="H" tabindex="-1">SUITE</button>
+        <button type="button" class="key fk envoi" data-key="A" tabindex="-1">ENVOI</button>
+      </div>
+      <div class="pad">
+        <button type="button" class="key num" data-char="1" tabindex="-1">1</button>
+        <button type="button" class="key num" data-char="2" tabindex="-1">2</button>
+        <button type="button" class="key num" data-char="3" tabindex="-1">3</button>
+        <button type="button" class="key num" data-char="4" tabindex="-1">4</button>
+        <button type="button" class="key num" data-char="5" tabindex="-1">5</button>
+        <button type="button" class="key num" data-char="6" tabindex="-1">6</button>
+        <button type="button" class="key num" data-char="7" tabindex="-1">7</button>
+        <button type="button" class="key num" data-char="8" tabindex="-1">8</button>
+        <button type="button" class="key num" data-char="9" tabindex="-1">9</button>
+        <button type="button" class="key num" data-char="*" tabindex="-1">*</button>
+        <button type="button" class="key num" data-char="0" tabindex="-1">0</button>
+        <button type="button" class="key num" data-char="#" tabindex="-1">#</button>
+      </div>
+    </div>
+
+    <dl class="legend" aria-label="Computer keyboard">
+      <div><dt>Enter</dt><dd>ENVOI</dd></div>
+      <div><dt>Home</dt><dd>SOMMAIRE</dd></div>
+      <div><dt>&uarr;</dt><dd>RETOUR</dd></div>
+      <div><dt>Backspace</dt><dd>CORRECTION</dd></div>
+      <div><dt>Esc</dt><dd>ANNULATION</dd></div>
+      <div><dt>Tab or &darr;</dt><dd>SUITE</dd></div>
+      <div><dt>F1</dt><dd>GUIDE</dd></div>
+      <div><dt>F2</dt><dd>REPETITION</dd></div>
+      <div><dt>F9</dt><dd>CONNEXION/FIN</dd></div>
+      <div><dt>Letters, digits</dt><dd>typed as they are</dd></div>
+    </dl>
+  </section>
+
+  <footer class="credits">
+    <p>A Minitel terminal from the MGT Unicorn Suite: the same clean-room
+      decoder and renderer as the Suite's Videotex tab, compiled to
+      WebAssembly. &copy; 2026 Dimitri Papadopoulos and The Montreal Greek Times.
+      Free software under the GNU AGPL v3:
+      <a href="https://github.com/greektimes/suite" rel="noopener">Source code</a>
+      &middot; <a href="third-party-licenses.txt">Licences</a>.</p>
+    <p>Connected through our own copy of the
+      MiniPavi gateway by Jean-Arthur Silve (GPL).
+      Minitel and Teletel are names of France T&eacute;l&eacute;com's terminal
+      and service, used descriptively.</p>
+  </footer>
+
+</main>
+<noscript><p class="noscript">This terminal needs JavaScript and WebAssembly.
+  A real Minitel or a Telnet client can reach videotex.greektimes.ca port 516.</p></noscript>
+<script src="engine.js"></script>
+<script src="minitel.js"></script>
+</body>
+</html>
