@@ -4,16 +4,33 @@ The official Windows app of The Montreal Greek Times. Watch Montreal Greek
 Television live, listen to Montreal Greek Radio, read the newspaper, and follow
 the news of the Greek community of Greater Montreal.
 
-[![download](https://img.shields.io/badge/download-v0.6.0--beta-blue)](https://github.com/greektimes/suite/releases/tag/v0.6.0-beta)
+[![download](https://img.shields.io/badge/download-v0.7.0--beta-blue)](https://github.com/greektimes/suite/releases/tag/v0.7.0-beta)
 [![license](https://img.shields.io/badge/license-AGPL--3.0-blue)](https://github.com/greektimes/suite/blob/main/COPYING)
 
 ---
 
 ## Status
 
-**v0.6.0-beta**, 27 September 2026. Beta: usable, and still changing.
+**v0.7.0-beta**, 20 October 2026. Beta: usable, and still changing.
 
 New in this release:
+
+- The **GW-BASIC tab**: Microsoft's own GW-BASIC, the BASIC of the IBM PC
+  era, built from the 1983 source code Microsoft published in 2020 and
+  running unmodified on a small IBM PC inside the app. It has its PC
+  speaker (BEEP, PLAY and SOUND) and its CGA graphics screens, and LOADs
+  and SAVEs programs in a `MGT BASIC` folder in your Documents, which comes
+  with the two type-in listings printed in the newspaper. Ctrl+V types in
+  a listing copied from the web.
+- The **Minitel starts in colour**, and its controls stay in place and draw
+  cleanly at any window size.
+- The **Terminal's text grows with the window**, as GW-BASIC's does, and the
+  cursor stays on the prompt after a resize.
+- The **NABU picture fills the window** at 4:3, and the NABU's fallback
+  firmware is now assembled from the published OpenNabu IPL source.
+- The RIPscrip tab no longer smears when the window is resized.
+
+New in 0.6.0-beta:
 
 - The **Videotex tab**, a terminal for the two videotex formats of the
   1980s, chosen with its Format menu. Both decoders were written for this
@@ -59,7 +76,7 @@ Four things, on four tabs, in the app's everyday mode:
   page-turning reader, with back issues.
 - **Website** opens greektimes.ca inside the app.
 
-Retro Mode, described below, adds eleven more tabs.
+Retro Mode, described below, adds twelve more tabs.
 
 ---
 
@@ -68,15 +85,18 @@ Retro Mode, described below, adds eleven more tabs.
 | where | link |
 | --- | --- |
 | GitHub | https://github.com/greektimes/suite/releases |
-| FTP | ftp://ftp.greektimes.ca/pub/suite/MGT_Unicorn_Suite_0.6.0.msi |
+| FTP | ftp://ftp.greektimes.ca/pub/suite/MGT_Unicorn_Suite_0.7.0.msi |
 | Gopher | gopher://gopher.greektimes.ca/1/software |
 
-Run `MGT_Unicorn_Suite_0.6.0.msi`. It installs to Program Files for all users
+Run `MGT_Unicorn_Suite_0.7.0.msi`. It installs to Program Files for all users
 and adds a Start Menu entry; the desktop shortcut is optional and can be turned
 off during setup. Uninstall from Settings, Apps and features.
 
+The installer is not code-signed (see [Code signing](#code-signing)). If
+Windows SmartScreen stops it, choose **More info**, then **Run anyway**.
+
 The app checks for its own updates: **Help**, then **Update**. Installing it
-over v0.5.0-beta upgrades it in place.
+over v0.6.0-beta upgrades it in place.
 
 ---
 
@@ -112,6 +132,12 @@ The same tab can drive real hardware. Given a serial cable, the Suite acts as
 a NABU Internet Adapter, and a genuine NABU boots its own ROM against a
 channel server.
 
+The GW-BASIC tab is the other exception: it talks to no server at all. It
+runs Microsoft's GW-BASIC, built from the source under `firmware/gwbasic`
+(MIT), unmodified on an IBM PC emulated in-window by libx86emu, vendored
+under `third_party/libx86emu` with its local changes documented. Programs
+are saved in the `MGT BASIC` folder in your Documents.
+
 | tab | protocol | default server |
 | --- | --- | --- |
 | RIPscrip | RIPscrip 1.54 vector graphics over Telnet | ripscrip.greektimes.ca:23 |
@@ -125,6 +151,7 @@ channel server.
 | IRC | RFC 1459, read-only view | irc.greektimes.ca:6667, channel `#retro` |
 | CU-SeeMe Live TV | Cornell CU-SeeMe over UDP | cu-seeme.greektv.ca:7648 |
 | Terminal | Telnet VT220, with Finger, QOTD and Zmodem | telnet.greektimes.ca |
+| GW-BASIC | Microsoft GW-BASIC on an IBM PC emulated in-window | none (local) |
 
 ---
 
@@ -174,7 +201,7 @@ the manifest gives.
 
 ### How binaries are built
 
-The published v0.6.0-beta installer was built by the maintainer on a local
+The published v0.7.0-beta installer was built by the maintainer on a local
 Windows machine, with `build_x64.bat` and then the MSI build script under
 `installer/`, and uploaded from there.
 
