@@ -66,6 +66,7 @@ typedef struct suite_module {
  * WM_COMMAND from anywhere cannot land on a different tab. */
 #define SUITE_ID_BTN_NABUNAT  (SUITE_ID_BTN_BASE + 11)
 #define SUITE_ID_BTN_NAPLPS   (SUITE_ID_BTN_BASE + 12)
+#define SUITE_ID_BTN_GWBASIC  (SUITE_ID_BTN_BASE + 13)  /* 2026-10-20 */
 
 /* Amendment 4: drag-resize gate. The shell sets a flag while the user
  * is in a continuous window-edge drag (WM_ENTERSIZEMOVE ..
@@ -193,6 +194,12 @@ void nabu_native_module_deactivate(HWND content);
 void nabu_native_module_resize(HWND content, int w, int h);
 BOOL nabu_native_module_on_command(HWND content, WPARAM wParam, LPARAM lParam);
 BOOL nabu_native_module_has_unsaved(void);
+
+void gwbasic_module_activate(HWND content);
+void gwbasic_module_deactivate(HWND content);
+void gwbasic_module_resize(HWND content, int w, int h);
+BOOL gwbasic_module_on_command(HWND content, WPARAM wParam, LPARAM lParam);
+BOOL gwbasic_module_has_unsaved(void);
 
 /* NAPLPS (videotex). A clean-room videotex terminal: the decoder and the
  * 256x200 SRM raster are in naplps_decode.[ch] and naplps_surface.[ch],

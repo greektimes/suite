@@ -26,8 +26,13 @@
  * 2026-09-27 emulator gate measured it (docs/2026-09-27_MINITEL_GATE_
  * EMULATOR.md section 3), so a reader moving between the two finds the
  * same keys: Enter or Right = ENVOI, Up = RETOUR, F2 = REPETITION, F1 =
- * GUIDE, Escape or Left = ANNULATION, Home = SOMMAIRE, Backspace =
- * CORRECTION, Tab or Down = SUITE. That emulator has NO PC key for
+ * GUIDE, Escape or Left = ANNULATION, Backspace = CORRECTION, Tab or
+ * Down = SUITE. CHANGED 2026-10-03 (operator, NABU CRT pass): Home =
+ * RETOUR and End = SOMMAIRE, so Home is "back one level" and End "top
+ * menu" in BOTH the Minitel and the NABU tabs (on the NABU tab Home and
+ * End are the <||| and |||> keys). Until then Home was SOMMAIRE, as on
+ * MiniPavi's emulator; that one key now differs from MiniPavi and from
+ * the public web Minitel page. That emulator has NO PC key for
  * CONNEXION/FIN; this tab uses F9, the key the Unicorn feasibility sketch
  * (section 6.3) gave it, and the key the NAPLPS side already uses for its
  * own exit. RECORDED as the operator asked: CONNEXION/FIN = F9.
@@ -91,8 +96,8 @@ static const mtlkey_t g_keys[] = {
 static const char *g_legend =
     "PC keys\r\n"
     "Enter, Right ENVOI\r\n"
-    "Home         SOMMAIRE\r\n"
-    "Up           RETOUR\r\n"
+    "End          SOMMAIRE\r\n"
+    "Home, Up     RETOUR\r\n"
     "Backspace    CORRECTION\r\n"
     "Esc, Left    ANNULATION\r\n"
     "Tab, Down    SUITE\r\n"
@@ -117,7 +122,9 @@ static BOOL g_shown = FALSE;
 static minitel_view_host_t g_host;
 static minitel_decoder_t *g_dec = NULL;
 static BOOL g_connected = FALSE;
-static BOOL g_mono = TRUE;          /* the period terminal: DEFAULT ON */
+static BOOL g_mono = FALSE;         /* colour by default (operator,
+                                       2026-10-20); naplps_module.c sets
+                                       it from its checkbox on activate */
 static BOOL g_last_was_cnx = FALSE;
 static unsigned g_tick = 0;
 
@@ -141,6 +148,10 @@ static int     g_big_scale = 0;
 #define MTL_KEY_GREEN        RGB(165, 208, 128)
 #define MTL_KEY_GREEN_DOWN   RGB(130, 175,  95)
 #define MTL_KEY_EDGE         RGB( 95,  70,  45)
+/* CONNEXION/FIN in light red (operator, 2026-10-20), set apart from the
+ * brown function keys it would otherwise blend into */
+#define MTL_KEY_RED          RGB(240, 150, 150)
+#define MTL_KEY_RED_DOWN     RGB(210, 115, 115)
 #define MTL_K_ENVOI          8
 #define MTL_FKEY_LAST        8      /* indices 0..8 are owner-drawn */
 
@@ -302,11 +313,11 @@ static int pc_function_key(int vk)
 {
     switch (vk) {
     case VK_RETURN: case VK_RIGHT:  return 8;   /* ENVOI      */
-    case VK_UP:                     return 3;   /* RETOUR     */
+    case VK_HOME: case VK_UP:       return 3;   /* RETOUR     */
     case VK_F2:                     return 4;   /* REPETITION */
     case VK_F1:                     return 5;   /* GUIDE      */
     case VK_ESCAPE: case VK_LEFT:   return 2;   /* ANNULATION */
-    case VK_HOME:                   return 1;   /* SOMMAIRE   */
+    case VK_END:                    return 1;   /* SOMMAIRE   */
     case VK_BACK:                   return 6;   /* CORRECTION */
     case VK_TAB: case VK_DOWN:      return 7;   /* SUITE      */
     case VK_F9:                     return K_CNX;
@@ -411,7 +422,7 @@ static void canvas_paint(HWND hwnd, HDC hdc)
             "",
             "Press CONNEXION/FIN (F9) to connect; Ctrl+O opens a .vdt page.",
             "",
-            "Enter ENVOI   Home SOMMAIRE   Up RETOUR   F1 GUIDE",
+            "Enter ENVOI   End SOMMAIRE   Home RETOUR   F1 GUIDE",
             "Backspace CORRECTION   Esc ANNULATION   Tab SUITE",
             "F2 REPETITION   F9 CONNEXION/FIN"
         };
@@ -563,9 +574,26 @@ void minitel_view_show(BOOL show)
     if (show) repaint();
 }
 
+#define MTL_KB_W  220                   /* the key column */
+#define MTL_KB_GAP 12                   /* between the screen and the keys */
+
+int minitel_view_screen_width(int w)
+{
+    int cw = w - MTL_KB_W - MTL_KB_GAP;
+    return cw < 100 ? 100 : cw;
+}
+
+void minitel_view_key_span(int w, int *left, int *width)
+{
+    /* the two function-key columns fill the key column exactly:
+     * 2 * half + bg == MTL_KB_W (see minitel_view_layout) */
+    if (left)  *left  = minitel_view_screen_width(w) + MTL_KB_GAP;
+    if (width) *width = MTL_KB_W;
+}
+
 void minitel_view_layout(int x, int y, int w, int h)
 {
-    const int kb_w = 220, gap = 12, bg = 6;
+    const int kb_w = MTL_KB_W, gap = MTL_KB_GAP, bg = 6;
     const int half = (kb_w - bg) / 2, third = (kb_w - 2 * bg) / 3;
     const int legend_lines = 12;
     int kx, ky, k, canvas_w, line_h = 16, legend_h, bh;
@@ -586,14 +614,16 @@ void minitel_view_layout(int x, int y, int w, int h)
         ReleaseDC(g_hLegend, hdc);
     }
     legend_h = legend_lines * line_h + 4;
-    /* Eight rows of keys (four function, four keypad), their gaps, a
-     * separator, and the legend. */
-    bh = (h - legend_h - 8 * bg - 12) / 8;
+    /* Nine rows' worth of height: one row left blank under CONNEXION/FIN
+     * (operator, 2026-10-20, to set it apart), then eight rows of keys
+     * (four function, four keypad), their gaps, a separator, and the
+     * legend. */
+    bh = (h - legend_h - 9 * bg - 12) / 9;
     if (bh > 30) bh = 30;
     if (bh < 20) bh = 20;
 
     kx = x + canvas_w + gap;
-    ky = y;
+    ky = y + bh + bg;                   /* the blank row */
     /* The eight function keys in the Minitel's two columns (CONNEXION/FIN
      * lives in the tab's top row, minitel_view_place_cnx), then the
      * digits, then the legend. */
@@ -612,7 +642,7 @@ void minitel_view_layout(int x, int y, int w, int h)
     MoveWindow(g_hLegend, kx, ky, kb_w, legend_h, TRUE);
 }
 
-/* CONNEXION/FIN: the long brown key in the tab's top row, where Connect
+/* CONNEXION/FIN: the long light-red key in the tab's top row, where Connect
  * and Disconnect sit in NAPLPS mode. */
 void minitel_view_place_cnx(int x, int y, int w, int h)
 {
@@ -644,8 +674,15 @@ BOOL minitel_view_on_drawitem(const DRAWITEMSTRUCT *di)
     down  = (di->itemState & ODS_SELECTED) != 0;
     green = (k == MTL_K_ENVOI);
     rc = di->rcItem;
-    br  = CreateSolidBrush(green ? (down ? MTL_KEY_GREEN_DOWN : MTL_KEY_GREEN)
-                                 : (down ? MTL_KEY_BROWN_DOWN : MTL_KEY_BROWN));
+    /* The rounded corners leave four tiny areas outside the key: paint
+     * them with the panel's black, or a key that moved keeps whatever
+     * was under its corners before (0.7.0, the resize artifacts). */
+    FillRect(di->hDC, &rc, (HBRUSH)GetStockObject(BLACK_BRUSH));
+    if (k == K_CNX)
+        br = CreateSolidBrush(down ? MTL_KEY_RED_DOWN : MTL_KEY_RED);
+    else
+        br = CreateSolidBrush(green ? (down ? MTL_KEY_GREEN_DOWN : MTL_KEY_GREEN)
+                                    : (down ? MTL_KEY_BROWN_DOWN : MTL_KEY_BROWN));
     pen = CreatePen(PS_SOLID, 1, MTL_KEY_EDGE);
     oldbr  = SelectObject(di->hDC, br);
     oldpen = (HPEN)SelectObject(di->hDC, pen);

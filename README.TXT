@@ -1,5 +1,5 @@
-MGT UNICORN SUITE v0.6.0-beta
-The Montreal Greek Times, September 2026
+MGT UNICORN SUITE v0.7.0-beta
+The Montreal Greek Times, October 2026
 
 The MGT Unicorn Suite is the official Windows app of The Montreal
 Greek Times (greektimes.ca). Watch Montreal Greek TV live, listen
@@ -19,8 +19,18 @@ the anonymous FTP archive over the original Prospero/ARDP
 protocol (archie.greektimes.ca), and a RIPscrip 1.54 graphical
 terminal (ripscrip.greektimes.ca).
 
-New in this release is the Videotex tab, a terminal for the two
-videotex formats of the 1980s, chosen with its Format menu:
+New in this release is the GW-BASIC tab: Microsoft's own GW-BASIC,
+the BASIC of the IBM PC era, running inside the app. Type in a
+listing from the newspaper, RUN it, and LOAD and SAVE your programs
+in the MGT BASIC folder in your Documents, which comes with the two
+listings printed in the Gazette (LOAD "RETRO649" and LOAD "DIALUP").
+Ctrl+V types in a listing copied from the web. The interpreter is
+Microsoft's 1983 source (MIT), built by T. K. Chia's project, running
+unmodified on a small IBM PC inside the Suite (the libx86emu x86
+core); nothing is installed or launched beside the app.
+
+The Videotex tab, new in 0.6.0, is a terminal for the two videotex
+formats of the 1980s, chosen with its Format menu:
 
   Minitel, the French Teletel terminal: a 40 x 25 screen with the
   Minitel's own keyboard on screen (SOMMAIRE, ENVOI, RETOUR and the
@@ -64,7 +74,7 @@ Bootstrapper before first launch.
 
 INSTALL
 
-Run the installer, MGT_Unicorn_Suite_0.6.0.msi. It installs to
+Run the installer, MGT_Unicorn_Suite_0.7.0.msi. It installs to
 Program Files for all users and adds a Start Menu entry; the
 desktop shortcut is optional and can be turned off during setup.
 Uninstall from Settings, Apps and features.
@@ -80,9 +90,12 @@ the LICENSES directory.
 
 The complete Corresponding Source for this exact build is at
 
-  https://github.com/greektimes/suite/releases/tag/v0.6.0-beta
+  https://github.com/greektimes/suite/releases/tag/v0.7.0-beta
 
-Build it with build_x64.bat under MSYS2 UCRT64.
+Build it with build_x64.bat under MSYS2 UCRT64. The GW-BASIC
+interpreter the app embeds is built from firmware/gwbasic/ by
+mgt_build.sh under the MSYS2 POSIX shell, and is checked against
+upstream's own release.
 
 CREDITS
 

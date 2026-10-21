@@ -262,6 +262,13 @@ with the Z80, TMS9918 and AY-3-8910 cores it carries, and boots the machine
 on MGT IPL, the Suite's fork of OpenNabu IPL (MIT). Those are compiled into
 the Suite itself rather than launched beside it.
 
+The GW-BASIC tab runs Microsoft's own GW-BASIC (the 1983 source Microsoft
+released under MIT in 2020), as completed and built by T. K. Chia with OEM
+modules by Diomidis Spinellis, S. Gros and T. K. Chia (MIT). The interpreter
+is embedded unmodified and runs on libx86emu (SciTech Software, David
+Mosberger-Tang, Egbert Eich and SUSE; X11-style licence), compiled into the
+Suite. Its screen font is "Modern DOS" by Jayvee Enaguas (CC0).
+
 The NAPLPS (videotex) tab contains NO third-party code at all. Its decoder
 and raster are clean-room from ANSI X3.110-1983 / CSA T500-1983, its 5x7
 glyphs are original work for this project, and naplps.js and

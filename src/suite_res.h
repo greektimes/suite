@@ -46,4 +46,12 @@
 #define IDR_ICON_NEWSTICKER        305
 #define IDR_ICON_LIVERADIO         306
 
+/* GW-BASIC tab (RCDATA, 2026-10-20). The interpreter itself, built from
+ * source by firmware/gwbasic/mgt_build.sh and byte-identical to upstream
+ * release 20261005, and the two Gazette listings that seed the reader's
+ * Documents\MGT BASIC folder on first use (never overwriting). */
+#define IDR_GWB_EXE                400
+#define IDR_GWB_RETRO649           401
+#define IDR_GWB_DIALUP             402
+
 #endif /* SUITE_RES_H */

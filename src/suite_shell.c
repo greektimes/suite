@@ -20,6 +20,7 @@
 #include "ripscrip_module.h"
 #include "naplps_module.h"
 #include "nabu_native_module.h"
+#include "gwbasic_module.h"
 #include "mode_toggle.h"
 #include "modern_mode.h"
 #include "livetv_module.h"
@@ -88,14 +89,17 @@
 #define ID_BTN_RIPSCRIP SUITE_ID_BTN_RIPSCRIP
 #define ID_BTN_NABUNAT  SUITE_ID_BTN_NABUNAT
 #define ID_BTN_NAPLPS   SUITE_ID_BTN_NAPLPS
+#define ID_BTN_GWBASIC  SUITE_ID_BTN_GWBASIC
 /* 2026-08-07: was 11. The external-player NABU tab was retired and the
  * in-Suite port took its place and its name, so there is one NABU row
  * now instead of two. */
 /* 2026-09-25: 10 -> 11 with the NAPLPS (videotex) tab.
  * 2026-09-27: UNCHANGED at 11. That tab became "Videotex" with a Format
  * dropdown (NAPLPS or Minitel): one tab, two formats (operator decision
- * D-M5), so the module table grows by zero. */
-#define ID_MODULE_COUNT 11
+ * D-M5), so the module table grows by zero.
+ * 2026-10-20: 11 -> 12 with the GW-BASIC tab (Microsoft's interpreter on
+ * an in-process 8088; docs/GWBASIC_PHASE_A_2026-10-20.md). */
+#define ID_MODULE_COUNT 12
 
 #define ID_HELP_ABOUT   200   /* Help > About (mouse / Alt+H mnemonic) */
 #define ID_HELP_UPDATE  201   /* Help > Check for Updates              */
@@ -116,6 +120,8 @@
  * Tab order (2026-08-07):
  *   RIPscrip, NABU Native, Retro Web Browser, Gopher,
  *   ARPANET FTP-Mail, WAIS, Archie, IRC, CU-SeeMe Live TV, Terminal.
+ * 2026-10-20: GW-BASIC joins as the LAST Retro tab, after Terminal
+ *   (operator decision for 0.7.0-beta).
  *
  * THE TWO NABU TABS BECAME ONE ON 2026-08-07. There used to be a "NABU"
  * row that launched the bundled MAME build in a window of its own, and a
@@ -183,6 +189,10 @@ static const suite_module_t g_modules[ID_MODULE_COUNT] = {
       telnet_module_activate, telnet_module_deactivate,
       telnet_module_resize,   telnet_module_on_command,
       telnet_module_has_unsaved },
+    { "GW-BASIC",                  ID_BTN_GWBASIC,
+      gwbasic_module_activate, gwbasic_module_deactivate,
+      gwbasic_module_resize,   gwbasic_module_on_command,
+      gwbasic_module_has_unsaved },
 };
 
 static HWND g_hwndMain    = NULL;
@@ -985,6 +995,7 @@ static LRESULT CALLBACK SuiteWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
         case ID_BTN_RIPSCRIP:
         case ID_BTN_NABUNAT:
         case ID_BTN_NAPLPS:
+        case ID_BTN_GWBASIC:
         case ID_BTN_WEB:
         case ID_BTN_GOPHER:
         case ID_BTN_ARPAMAIL:
@@ -1197,6 +1208,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrev, LPSTR lpCmdLine, int nShow)
     ripscrip_module_shutdown();
     naplps_module_shutdown();
     nabu_native_module_shutdown();
+    gwbasic_module_shutdown();
     irc_module_shutdown();
     cuseeme_module_shutdown();
     telnet_module_shutdown();

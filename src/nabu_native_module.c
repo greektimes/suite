@@ -384,7 +384,10 @@ static void nn_key_drain(void)
  *   PgDn  E4/F4 is the NABU's right guillemet, PgUp E5/F5 the left
  *   Del   E6/F6 is NO, Ins E7/F7 is YES
  *   Alt   E8/F8 is SYM
- *   Pause E9/F9, End EA/FA
+ *   Pause E9/F9
+ *   Home and End send nothing on this tab (2026-10-03, NABU key layout:
+ *   the Greek Times app pages with PgUp/PgDn, the thick keys, and goes
+ *   back with Esc). TV/NABU (EA/FA) has no PC key here.
  *   Backspace is plain 0x7F and has no break code.
  */
 typedef struct { int vk; uint8_t make; uint8_t brk; } nn_special_t;
@@ -400,7 +403,6 @@ static const nn_special_t g_specials[] = {
     { VK_INSERT, 0xE7, 0xF7 },   /* YES */
     { VK_MENU,   0xE8, 0xF8 },   /* Alt, SYM */
     { VK_PAUSE,  0xE9, 0xF9 },
-    { VK_END,    0xEA, 0xFA },
 };
 
 static const nn_special_t *nn_find_special(int vk)
@@ -883,37 +885,39 @@ static void nn_dib_destroy(void)
 /* ------------------------------------------------------------------ */
 
 /*
- * LARGEST WHOLE-NUMBER SCALE THAT FITS, CENTRED.
+ * THE LARGEST 4:3 PICTURE THAT FITS, CENTRED (since 0.7.0-beta).
  *
  * The source is the TMS9918 active display, NABU_SCREEN_W by
- * NABU_SCREEN_H, which is 256 by 192 and therefore already exactly 4:3.
- * That last fact is worth stating because it makes the arithmetic here
- * much simpler than it looks: scaling 256x192 by a whole number PRESERVES
- * the aspect ratio for free, so there is no separate aspect correction to
- * apply and none is applied.
+ * NABU_SCREEN_H, which is 256 by 192 and therefore already exactly 4:3,
+ * so filling the largest 4:3 rectangle is a plain uniform stretch.
  *
- * The scale is an integer and never anything else. Nearest neighbour at a
- * fractional scale gives pixel blocks of uneven width, which on the 8x8
- * text a NABU spends most of its life drawing reads as wobbling letters;
- * the alternative, smoothing, turns the same text to mush. A whole number
- * makes every source pixel the same solid block as every other, and that
- * is where the tab's sharpness comes from.
+ * Until 2026-10-20 the scale was a whole number, for perfectly even pixel
+ * blocks, which left a 1280 x 992 window with a 768 x 576 picture inside
+ * wide bars. The operator asked for the picture to take the whole window
+ * at 4:3, as the GW-BASIC tab's graphics modes do, and the trade is the
+ * same one made there: nearest neighbour (COLORONCOLOR, below) at a
+ * fractional scale, so a source pixel is n or n+1 screen pixels wide.
+ * That keeps the edges hard, where smoothing would blur the 8x8 text; at
+ * the usual 3.5x to 4x the one-pixel difference is hard to see.
  *
  * The floor is 1x, so a tab too small to hold the whole picture shows the
- * middle of it at full size rather than a blurred shrink. StretchBlt
- * clips the overhang. At the Suite's window sizes this never arises: it
- * would need a screen area under 256x192.
+ * middle of it at full size rather than a shrink. StretchBlt clips the
+ * overhang.
  */
 static void nn_dest_rect(int cw, int ch, RECT *out)
 {
-    int scale, w, h;
+    int w, h;
 
-    scale = cw / NABU_SCREEN_W;
-    if (ch / NABU_SCREEN_H < scale) scale = ch / NABU_SCREEN_H;
-    if (scale < 1) scale = 1;
-
-    w = NABU_SCREEN_W * scale;
-    h = NABU_SCREEN_H * scale;
+    w = cw;
+    h = cw * NABU_SCREEN_H / NABU_SCREEN_W;
+    if (h > ch) {
+        h = ch;
+        w = ch * NABU_SCREEN_W / NABU_SCREEN_H;
+    }
+    if (w < NABU_SCREEN_W || h < NABU_SCREEN_H) {
+        w = NABU_SCREEN_W;
+        h = NABU_SCREEN_H;
+    }
 
     /* Centre it. Whatever is left over becomes the bars, and the caller
      * has already filled the whole client area with the surround colour,

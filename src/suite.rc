@@ -50,6 +50,12 @@
 305 RCDATA "../icons/news-ticker.png"
 306 RCDATA "../icons/Live-radio.png"
 
+/* GW-BASIC tab: the interpreter (MIT; see firmware/gwbasic/LICENSE and
+ * MGT-BUILD.md) and the two listings printed in the Gazette. */
+400 RCDATA "../firmware/gwbasic/GWBASICA.EXE"
+401 RCDATA "../assets/basic/RETRO649.BAS"
+402 RCDATA "../assets/basic/DIALUP.BAS"
+
 1 VERSIONINFO
 FILEVERSION    SUITE_VERSION_MAJOR, SUITE_VERSION_MINOR, SUITE_VERSION_PATCH, 0
 PRODUCTVERSION SUITE_VERSION_MAJOR, SUITE_VERSION_MINOR, SUITE_VERSION_PATCH, 0

@@ -61,6 +61,12 @@ void minitel_view_destroy(void);
 void minitel_view_show(BOOL show);
 /* The area the screen and the keyboard share, in parent coordinates. */
 void minitel_view_layout(int x, int y, int w, int h);
+/* The width minitel_view_layout gives the screen box out of a total
+ * width w, so the top row can line controls up with its right edge. */
+int  minitel_view_screen_width(int w);
+/* Where the two function-key columns stand, out of the same total width w:
+ * their left edge (from the start of w) and their width. */
+void minitel_view_key_span(int w, int *left, int *width);
 /* The long CONNEXION/FIN key, placed in the tab's top row. */
 void minitel_view_place_cnx(int x, int y, int w, int h);
 

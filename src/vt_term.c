@@ -176,9 +176,35 @@ void vt_term_resize(VTTerm *t, int cols, int rows)
     int    new_cap;
     int    i, j;
     int    copy_cols;
+    int    cur_abs, dropped, src_total;
 
     if (!t || cols < 1 || rows < 1) return;
     if (cols == t->cols && rows == t->rows) return;
+
+    /* The cursor's line in the buffer, so it can follow its text: the
+     * visible region is bottom-anchored, and when the row count changes
+     * the text on screen moves up or down by the difference. Clamping
+     * cursor_y alone left the cursor rows away from the prompt after a
+     * resize (0.7.0, found once the Terminal font began to follow the
+     * window). */
+    cur_abs = (t->lines_total - t->rows) + t->cursor_y;
+
+    /* Shrinking takes blank rows from below the cursor first, as xterm
+     * does, so the text above it stays on screen instead of scrolling
+     * away (a short session padded out by a taller window). */
+    src_total = t->lines_total;
+    if (rows < t->rows) {
+        int trim = 0;
+        while (trim < t->rows - rows && src_total - 1 > cur_abs) {
+            VTCell *r = row_ptr(t, src_total - 1);
+            int x;
+            for (x = 0; x < t->cols; x++)
+                if (r[x].ch != ' ' && r[x].ch != 0) break;
+            if (x < t->cols) break;
+            src_total--;
+            trim++;
+        }
+    }
 
     /* Build a fresh buffer at the new cols and copy row-by-row.
      * Visible region stays the *last* min(rows, lines_total) rows. */
@@ -188,15 +214,16 @@ void vt_term_resize(VTTerm *t, int cols, int rows)
     newbuf = (VTCell *)calloc((size_t)new_cap * (size_t)cols, sizeof(VTCell));
     if (!newbuf) return;
 
-    new_total = t->lines_total;
+    new_total = src_total;
     if (new_total > new_cap) {
         /* keep newest `new_cap` rows */
         new_total = new_cap;
     }
 
+    dropped = src_total - new_total;
     copy_cols = (cols < t->cols) ? cols : t->cols;
     for (i = 0; i < new_total; i++) {
-        int src_idx = (t->lines_total - new_total) + i;
+        int src_idx = (src_total - new_total) + i;
         VTCell *src = row_ptr(t, src_idx);
         VTCell *dst = &newbuf[(size_t)i * (size_t)cols];
         for (j = 0; j < cols; j++) {
@@ -223,6 +250,8 @@ void vt_term_resize(VTTerm *t, int cols, int rows)
     t->cols = cols;
     t->rows = rows;
     if (t->cursor_x >= cols) t->cursor_x = cols - 1;
+    t->cursor_y = (cur_abs - dropped) - (new_total - rows);
+    if (t->cursor_y < 0) t->cursor_y = 0;
     if (t->cursor_y >= rows) t->cursor_y = rows - 1;
     if (t->scroll_offset > (t->lines_total - t->rows))
         t->scroll_offset = t->lines_total - t->rows;

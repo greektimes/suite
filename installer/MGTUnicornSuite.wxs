@@ -355,6 +355,16 @@
         -->
         <File Id="LicMarduk"   Name="LICENSE.marduk.txt"   Source="$(PayloadDir)\LICENSES\LICENSE.marduk.txt" />
         <File Id="LicOpenNabu" Name="LICENSE.opennabu.txt" Source="$(PayloadDir)\LICENSES\LICENSE.opennabu.txt" />
+        <!--
+          The three texts the GW-BASIC tab brings, added for 0.7.0. GW-BASIC
+          (MIT, Microsoft and the OEM-module authors) is embedded in the
+          exe and libx86emu (X11-style) is compiled into it, so both
+          notices must travel with the binary. Modern DOS is CC0 and needs
+          no notice; it ships anyway so the credit is complete.
+        -->
+        <File Id="LicGwBasic"   Name="LICENSE.gwbasic.txt"   Source="$(PayloadDir)\LICENSES\LICENSE.gwbasic.txt" />
+        <File Id="LicLibx86emu" Name="LICENSE.libx86emu.txt" Source="$(PayloadDir)\LICENSES\LICENSE.libx86emu.txt" />
+        <File Id="LicModernDos" Name="LICENSE.moderndos.txt" Source="$(PayloadDir)\LICENSES\LICENSE.moderndos.txt" />
       </Component>
     </ComponentGroup>
 

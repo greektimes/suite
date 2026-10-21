@@ -412,6 +412,13 @@ This entry exists to record a conclusion, not to satisfy an obligation.
   `firmware/mgtipl/MGT-CHANGES.md`; and the assembled images. Modified
   copies are marked as such in the file header, as MIT requires the
   copyright and permission notice to be preserved.
+- Since 0.7.0-beta BOTH images are assembled from source this repository
+  holds: `mgtipl.bin` from the fork, and the fallback `opennabu.bin`
+  (sha256 `44ee0854bb85896a...`) from the vendored upstream source
+  `third_party/opennabuipl/opennabu.a80` with Debian z80asm 1.8. Until
+  0.6.0 the fallback was an older OpenNabu binary taken from Marduk's
+  distribution, for which no source exists in the upstream repository;
+  it is no longer shipped.
 - In an installed Suite both assembled images sit beside the emulator
   package, as `NABU\mgtipl.bin` and `NABU\opennabu.bin`. Before 0.5.0
   the installer carried neither, and an installed NABU Native tab had no
@@ -605,3 +612,74 @@ implied.
   Jean-Arthur Silve (GPL), which runs on the server; nothing of it is in
   this repository or the page. The page's scan lines and key map are the
   Suite tab's own (see "Minitel mode of the Videotex tab" above).
+
+## Microsoft GW-BASIC, and T. K. Chia's build of it (the GW-BASIC tab)
+
+- What it is: the interpreter the **GW-BASIC** tab runs. It is Microsoft's
+  1983 GW-BASIC source, released by Microsoft in 2020, plus the "OEM"
+  modules that release lacked (keyboard, screen, sound, events, Ctrl-Break),
+  written by Diomidis Spinellis, S. Gros and T. K. Chia. The Suite
+  runs `GWBASICA.EXE`, the variant that adds `TIMER` and `MKDIR`/`CHDIR`/
+  `RMDIR`.
+- Upstream origin: https://codeberg.org/tkchia/GW-BASIC, commit
+  `1432e385776554e43784b411eda7b8b2a9709e73` (2026-10-05). Every tracked
+  file is vendored at `firmware/gwbasic/`, including upstream's own pinned
+  JWasm and JWlink source tarballs, so it builds without the network.
+- How it is built: `firmware/gwbasic/mgt_build.sh` runs upstream's own
+  Makefile unmodified (OEMVER pinned to the commit date). The result is
+  **byte-identical** to upstream release 20261005 (`GWBASICA.EXE` sha256
+  `1a7b92b1aaf893e7f040190b8fa728e3c5b4dd82caaded8fefd0a471f669f7f7`), and
+  the script checks this on every build.
+- Licence: **MIT**. "Copyright (c) Microsoft Corporation", and the OEM
+  modules "(C) Copyright D. Spinellis, S. Gros, T.K. Chia 2020--2022",
+  under the same grant. The text is upstream's `LICENSE`, reproduced
+  unmodified at `firmware/gwbasic/LICENSE`, and ships with the Suite at
+  `LICENSES\LICENSE.gwbasic.txt`.
+- How it ships: `GWBASICA.EXE` is embedded in `MGT_Unicorn_Suite_x64.exe`
+  as a resource and executed by the Suite's own x86 machine (next entry);
+  it is never written to disk or run by Windows. Nothing in it was
+  modified.
+- Used for: the GW-BASIC tab.
+
+## libx86emu (x86 CPU emulation, compiled into the Suite)
+
+- What it is: the x86 CPU that runs GW-BASIC inside the Suite. It is
+  compiled and linked into `MGT_Unicorn_Suite_x64.exe`.
+- Upstream origin: https://github.com/wfeldt/libx86emu, commit
+  `ce81129c57fdfbf690bebc210a8db97d926cc5e7` (2025-02-24). Vendored at
+  `third_party/libx86emu/` (`api.c`, `decode.c`, `mem.c`, `ops.c`,
+  `ops2.c`, `prim_ops.c`, `include/`).
+- Licence: an **X11/BSD-style permissive licence**. Copyright (c)
+  1996-1999 SciTech Software, Inc.; Copyright (c) David Mosberger-Tang;
+  Copyright (c) 1999 Egbert Eich; Copyright (c) 2007-2017 SUSE LINUX GmbH
+  (author Steffen Winterfeldt). Upstream's `LICENSE` and `LICENSE_INFO`
+  are kept unmodified in `third_party/libx86emu/`, and the licence ships
+  at `LICENSES\LICENSE.libx86emu.txt`.
+- What the Suite modified: one change at two sites, for Windows. The host
+  port-I/O header and the IOPL probe fall back to upstream's own
+  non-x86 definitions on `_WIN32`, because every guest port access goes
+  through the Suite's memory/I-O callback and never reaches host hardware.
+  Both sites are marked "MGT:" in the source.
+- What is NOT libx86emu: the PC around the CPU (memory map, CGA, BIOS
+  and DOS services, the MZ loader, timing) is `src/gwb_machine.[ch]`, and
+  the tab is `src/gwbasic_module.[ch]`. Those are the Suite's own work and
+  are AGPLv3 like the rest of it.
+
+## Modern DOS (the GW-BASIC tab's screen font)
+
+- What it is: "Modern DOS" 8x16 and 8x8 by **Jayvee Enaguas**
+  (HarvettFox96), a raster font based on the IBM VGA and Verite ROM fonts.
+  The tab draws text mode in the 8x16 face and characters in the CGA
+  graphics modes in the 8x8 face.
+- Origin: the original source repository (notabug.org/HarvettFox96/
+  ttf-moderndos) is no longer online; the font was taken from its
+  distribution archive (2019-01-04), which carries the licence file. The
+  two TTFs used are kept at `third_party/moderndos/`.
+- Licence: **Creative Commons Zero (CC0) 1.0 Universal**, public domain
+  dedication. The archive's `LICENSE.txt` is kept at
+  `third_party/moderndos/LICENSE.txt` and ships at
+  `LICENSES\LICENSE.moderndos.txt`. CC0 asks for nothing; the font is
+  credited anyway.
+- How it ships: rasterised at build time by
+  `tools/font_ttf_to_cp437.py` into the C tables `src/gwb_font8x16.h` and
+  `src/gwb_font8x8.h` (all 256 CP437 code points), compiled into the exe.

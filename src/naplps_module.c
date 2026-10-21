@@ -114,8 +114,12 @@ static HWND g_hScanChk  = NULL;
 static int  g_format         = FMT_MINITEL; /* the dropdown           */
 static int  g_session_format = FMT_MINITEL; /* the format of the live
                                                or last session         */
-static BOOL g_mono_mtl       = TRUE;        /* Minitel: monochrome by
-                                               default, the 1B's tube  */
+static BOOL g_mono_mtl       = FALSE;       /* Minitel: COLOUR by default
+                                               (operator, 2026-10-20);
+                                               the 1B's grey tube is
+                                               one tick away. Not
+                                               persisted, so every
+                                               launch starts in colour */
 static BOOL g_scan_mtl       = TRUE;        /* Minitel: scan lines by
                                                default (operator)      */
 
@@ -904,6 +908,9 @@ static void nap_register_classes(HINSTANCE hInst)
     if (!g_panel_class_reg) {
         ZeroMemory(&wc, sizeof wc);
         wc.cbSize        = sizeof wc;
+        /* the whole panel repaints when its size changes (see the
+         * RedrawWindow at the end of naplps_module_resize) */
+        wc.style         = CS_HREDRAW | CS_VREDRAW;
         wc.lpfnWndProc   = NapPanelProc;
         wc.hInstance     = hInst;
         wc.hCursor       = LoadCursorA(NULL, (LPCSTR)IDC_ARROW);
@@ -1040,6 +1047,36 @@ static void mtl_host_file_opened(void)
 /* Module entry points                                                 */
 /* ------------------------------------------------------------------ */
 
+/* A checkbox's width from its label in the font it uses: the box, the
+ * gap after it, the text, and a few pixels so the last letter is never
+ * the one that gets cropped. An empty label gives the box alone. */
+static int nap_check_w(HWND chk, const char *label)
+{
+    HDC hdc;
+    HGDIOBJ old = NULL;
+    HFONT f;
+    SIZE sz = { 0, 0 };
+    int box = GetSystemMetrics(SM_CXMENUCHECK);
+
+    if (!label[0]) return box + 4;
+    hdc = GetDC(chk);
+    f = (HFONT)SendMessageA(chk, WM_GETFONT, 0, 0);
+    if (f) old = SelectObject(hdc, f);
+    GetTextExtentPoint32A(hdc, label, (int)strlen(label), &sz);
+    if (old) SelectObject(hdc, old);
+    ReleaseDC(chk, hdc);
+    return box + 6 + sz.cx + 6;
+}
+
+/* Scanlines with or without its label (narrow windows, see the resize). */
+static void nap_set_scan_label(BOOL on)
+{
+    static int shown = -1;
+    if (shown == (int)on) return;
+    shown = (int)on;
+    SetWindowTextA(g_hScanChk, on ? "Scanlines" : "");
+}
+
 void naplps_module_resize(HWND content, int w, int h)
 {
     const int margin = 16;
@@ -1066,16 +1103,73 @@ void naplps_module_resize(HWND content, int w, int h)
         MoveWindow(g_hPortEdit, port_lx + 38, 14, 55,     row_h, TRUE);
     }
     if (g_format == FMT_MINITEL) {
-        /* Monochrome, Scanlines, and the long brown CONNEXION/FIN key
-         * where Connect and Disconnect sit for NAPLPS. */
-        const int cnx_w = 128, scan_w = 88, mono_w = 100;
-        const int gap = 8;
-        int cnx_x  = w - margin - cnx_w;
-        int scan_x = cnx_x - gap - scan_w;
-        int mono_x = scan_x - gap - mono_w;
-        if (mono_x < margin + 519) mono_x = margin + 519;
-        MoveWindow(g_hMonoChk, mono_x, 16, mono_w, 22,    TRUE);
-        MoveWindow(g_hScanChk, scan_x, 16, scan_w, 22,    TRUE);
+        /* Monochrome and Scanlines end at the screen box's right edge, so
+         * the long light-red CONNEXION/FIN key, above the key column,
+         * stands apart (operator, 2026-10-20). Only when the window is so
+         * narrow that the Format/Host/Port fields leave no room does the
+         * left clamp push them further right. */
+        /*
+         * CONNEXION/FIN is centred over the two function-key columns
+         * below it (operator, 2026-10-20). The checkbox widths are measured
+         * from their labels, so "Scanlines" is never cropped.
+         *
+         * Nothing may overlap. When the row runs short (the Suite's
+         * minimum is 800 pixels), it gives way in this order: the
+         * checkboxes leave the screen box's edge and move right; then
+         * CONNEXION/FIN slides right, at most to the key columns' right
+         * edge; then Scanlines drops its label and keeps its box; then
+         * Scanlines is hidden; last, at the very narrowest, CONNEXION/FIN
+         * narrows toward its own label's width. Monochrome never shrinks.
+         */
+        const int gap = 8, min_x = margin + 519;
+        int cnx_w = 128;
+        int span_l, span_w, cnx_x, cnx_max, screen_r, room;
+        int mono_w = nap_check_w(g_hMonoChk, "Monochrome");
+        int scan_full = nap_check_w(g_hScanChk, "Scanlines");
+        int scan_box = nap_check_w(g_hScanChk, "");
+        int scan_w, mono_x, scan_x;
+        BOOL scan_label = TRUE, scan_show = TRUE;
+
+        minitel_view_key_span(w - 2 * margin, &span_l, &span_w);
+        cnx_x   = margin + span_l + (span_w - cnx_w) / 2;
+        cnx_max = margin + span_l + span_w - cnx_w;
+        screen_r = margin + minitel_view_screen_width(w - 2 * margin);
+
+        /* the room the checkboxes need, right of the Port field */
+        room = mono_w + gap + scan_full;
+        if (min_x + room > cnx_x - gap) {
+            cnx_x = min_x + room + gap;
+            if (cnx_x > cnx_max) {
+                cnx_x = cnx_max;
+                if (min_x + mono_w + gap + scan_box <= cnx_x - gap) scan_label = FALSE;
+                else scan_show = FALSE;
+                if (!scan_show && min_x + mono_w + gap > cnx_x) {
+                    /* the label measured as a checkbox's, less its box */
+                    int cnx_min = nap_check_w(g_hMonoChk, "CONNEXION/FIN")
+                                - GetSystemMetrics(SM_CXMENUCHECK);
+                    int right = cnx_x + cnx_w;
+                    cnx_w = right - (min_x + mono_w + gap);
+                    if (cnx_w < cnx_min) cnx_w = cnx_min;
+                    cnx_x = right - cnx_w;
+                }
+            }
+        }
+        scan_w = scan_label ? scan_full : scan_box;
+
+        /* right-aligned to the screen box when there is room, else as far
+         * right as CONNEXION/FIN allows, never left of the Port field */
+        scan_x = screen_r - scan_w;
+        if (scan_x + scan_w > cnx_x - gap) scan_x = cnx_x - gap - scan_w;
+        mono_x = (scan_show ? scan_x - gap : scan_x + scan_w) - mono_w;
+        if (mono_x < min_x) {
+            mono_x = min_x;
+            scan_x = mono_x + mono_w + gap;
+        }
+
+        nap_set_scan_label(scan_label);
+        ShowWindow(g_hScanChk, scan_show ? SW_SHOW : SW_HIDE);
+        MoveWindow(g_hMonoChk, mono_x, 16, mono_w, 22, TRUE);
+        MoveWindow(g_hScanChk, scan_x, 16, scan_w, 22, TRUE);
         minitel_view_place_cnx(cnx_x, 12, cnx_w, btn_h);
     } else {
         /* NAPLPS: the Phase 2a row, with the checkbox label shortened to
@@ -1111,6 +1205,16 @@ void naplps_module_resize(HWND content, int w, int h)
         MoveWindow(g_hStatus, margin, h - margin - status_h,
                    w - 2 * margin, status_h, TRUE);
     }
+
+    /*
+     * Repaint every child now. A child that MOVES without changing size
+     * is not repainted: Windows copies its old pixels to the new place,
+     * and during a drag those pixels can already be stale, which left
+     * ghost letters on the Minitel keys and a garbled "Scanlines" (0.7.0;
+     * the same remedy fixed the RIPscrip panel).
+     */
+    RedrawWindow(g_hPanel, NULL, NULL,
+                 RDW_INVALIDATE | RDW_ERASE | RDW_ALLCHILDREN);
 
     if (g_hCanvas) {
         InvalidateRect(g_hCanvas, NULL, FALSE);
@@ -1295,7 +1399,7 @@ BOOL naplps_module_on_command(HWND content, WPARAM wParam, LPARAM lParam)
                 if (sel == FMT_MINITEL) minitel_view_focus();
                 else if (g_hCanvas) SetFocus(g_hCanvas);
                 nap_status(sel == FMT_MINITEL
-                    ? "Minitel: port %d, monochrome as the 1B's tube; F9 or "
+                    ? "Minitel: port %d, in colour; F9 or "
                       "CONNEXION/FIN connects"
                     : "NAPLPS: port %d",
                     sel == FMT_MINITEL ? MINITEL_DEFAULT_PORT : NAPLPS_DEFAULT_PORT);

@@ -211,6 +211,76 @@ static void measure_cell(HWND hwnd)
     ReleaseDC(hwnd, hdc);
 }
 
+/*
+ * THE TERMINAL FONT FOLLOWS THE WINDOW (2026-10-20, 0.7.0-beta; operator:
+ * "the Terminal text is too small, make it the same apparent size as the
+ * GW-BASIC screen"). It used to be a fixed 12 pt Cascadia Mono, so a
+ * bigger window only meant more, equally small, cells.
+ *
+ * The rule is the GW-BASIC tab's (gwbasic_module.c, gb_text_font): fit the
+ * largest 4:3 rectangle into the render area, take an 80 x 25 cell of it,
+ * and choose the largest Cascadia Mono (Consolas, then any fixed pitch)
+ * whose glyphs fit that cell. So at any window size the two tabs draw text
+ * at the same size. The grid itself still fills the whole render area
+ * with that font (compute_grid_for_client), so the 80 x 24 floor and the
+ * wide-window extra columns behave as before. The font never goes below
+ * TELNET_FONT_MIN_PX, so a small window stays readable and clips at the
+ * right edge instead, as it already did below 80 columns.
+ */
+#define TELNET_FONT_MIN_PX 14
+
+static HFONT make_term_font(int h)
+{
+    HFONT f = CreateFontA(-h, 0, 0, 0, FW_NORMAL, 0, 0, 0, DEFAULT_CHARSET,
+        OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, CLEARTYPE_QUALITY,
+        FIXED_PITCH | FF_MODERN, "Cascadia Mono");
+    if (!f) f = CreateFontA(-h, 0, 0, 0, FW_NORMAL, 0, 0, 0, DEFAULT_CHARSET,
+        0, 0, CLEARTYPE_QUALITY, FIXED_PITCH, "Consolas");
+    if (!f) f = CreateFontA(-h, 0, 0, 0, FW_NORMAL, 0, 0, 0, DEFAULT_CHARSET,
+        0, 0, CLEARTYPE_QUALITY, FIXED_PITCH | FF_MODERN, NULL);
+    return f;
+}
+
+/* Returns TRUE if the font changed. */
+static BOOL fit_font_to_client(HWND hwnd)
+{
+    static int last_cw = -1, last_ch = -1;
+    RECT rc;
+    int bw, bh, cw, ch, h;
+    HDC hdc;
+    HFONT best = NULL;
+
+    if (!hwnd) return FALSE;
+    GetClientRect(hwnd, &rc);
+    bw = rc.right - rc.left;
+    bh = bw * 3 / 4;
+    if (bh > rc.bottom - rc.top) { bh = rc.bottom - rc.top; bw = bh * 4 / 3; }
+    cw = bw / 80;
+    ch = bh / 25;
+    if (cw == last_cw && ch == last_ch && g_hFontTelnet) return FALSE;
+    last_cw = cw;
+    last_ch = ch;
+
+    hdc = GetDC(hwnd);
+    for (h = ch; h >= TELNET_FONT_MIN_PX; h--) {
+        HFONT f = make_term_font(h), old;
+        TEXTMETRIC tm;
+        if (!f) continue;
+        old = (HFONT)SelectObject(hdc, f);
+        GetTextMetrics(hdc, &tm);
+        SelectObject(hdc, old);
+        if (tm.tmAveCharWidth <= cw && tm.tmHeight <= ch) { best = f; break; }
+        DeleteObject(f);
+    }
+    ReleaseDC(hwnd, hdc);
+    if (!best) best = make_term_font(TELNET_FONT_MIN_PX);
+    if (!best) return FALSE;
+    if (g_hFontTelnet) DeleteObject(g_hFontTelnet);
+    g_hFontTelnet = best;
+    measure_cell(hwnd);
+    return TRUE;
+}
+
 static void compute_grid_for_client(HWND hwnd, int *out_cols, int *out_rows)
 {
     RECT rc;
@@ -1238,6 +1308,7 @@ static LRESULT CALLBACK render_proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM l
 
     case WM_SIZE: {
         int cols, rows;
+        fit_font_to_client(hwnd);       /* the cell size follows the window */
         compute_grid_for_client(hwnd, &cols, &rows);
         if (g_term_inited && (cols != g_term.cols || rows != g_term.rows)) {
             vt_term_resize(&g_term, cols, rows);
@@ -1596,7 +1667,9 @@ void telnet_module_activate(HWND content)
         /* Dispatch amendment 2026-06-15 (item 4): Glass TTY retired in
          * favor of Cascadia Mono, which ships with Windows 11 and is
          * Dimitri's established SecureCRT terminal face on the unicorn
-         * server. Size is 12 pt at 96 DPI (-MulDiv(12, dpi, 72) gives
+         * server. Since 0.7.0 this 12 pt face is only the STARTING font:
+         * the first WM_SIZE replaces it with one fitted to the window
+         * (fit_font_to_client). Size is 12 pt at 96 DPI (-MulDiv(12, dpi, 72) gives
          * the negative height GDI expects). If Cascadia Mono is missing
          * (older Windows / pre-2020 update), fall back to Consolas, then
          * to the generic FIXED_PITCH | FF_MODERN default. */

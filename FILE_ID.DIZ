@@ -1,10 +1,10 @@
-MGT UNICORN SUITE v0.4.0-beta (Win x64)
+MGT UNICORN SUITE v0.7.0-beta (Win x64)
 Polyprotocol client of The Montreal
-Greek Times. Retro Mode: Web 1.0,
-Gopher, WAIS, Archie, Telnet, Finger,
-QOTD, ARPA mail, CU-SeeMe TV, IRC.
+Greek Times. Retro Mode: Web 1.0, Gopher,
+WAIS, Archie, Telnet, RIPscrip, NABU,
+Videotex (Minitel, NAPLPS), GW-BASIC,
+ARPA mail, CU-SeeMe TV, IRC.
 Modern Mode: Live TV, Live Radio,
-Newspaper, Website.
-Free software, AGPLv3.
+Newspaper, Website. Free software, AGPLv3.
 Source: github.com/greektimes/suite
 (c) 2026 The Montreal Greek Times

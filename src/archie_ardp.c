@@ -11,22 +11,32 @@
  *   Request : 9-octet v0 binary header [hdrlen=9, CID(2), seq(2), total(2),
  *             rcvd-through(2)] followed by an ASCII, newline-delimited
  *             payload:
- *                 VERSION 1 <swid>
- *                 AUTHENTICATOR UNAUTHENTICATED <user>
+ *                 VERSION 5 <swid>
+ *                 AUTHENTICATE '' UNAUTHENTICATED ''
  *                 DIRECTORY ASCII ARCHIE/MATCH(<maxhits>,0,<type>)/<term>
  *                 LIST ATTRIBUTES COMPONENTS
  *             The empty COMPONENTS list makes the server enumerate the
  *             match directory (it supplies the '*' all-results subname).
- *   Reply   : a VERSION 1 client gets CID forced to 0, so a single-packet
- *             reply is a 1-octet \x01 header + payload; multi-packet
+ *             The CID is FRESH PER QUERY (archie_next_cid, below), as
+ *             xarchie does; retransmits of one query reuse it. Since
+ *             2026-07-25: before that this client sent VERSION 1 with a
+ *             fixed CID 0x4D47.
+ *   Reply   : a VERSION 5 client gets its CID echoed, so a single-packet
+ *             reply carries a 3-octet header (\x03 + CID); a VERSION 1
+ *             reply's 1-octet \x01 header is still accepted. Multi-packet
  *             replies use a 7-octet \x07,cid,seq,total header per packet
- *             and are reassembled by seq (1-based) up to total. Completion
- *             is the ARDP total-packet count, never a text EOF token.
+ *             and are reassembled by seq (1-based) up to total. The reply
+ *             CID is not checked: every query has its own socket.
+ *             Completion is the ARDP total-packet count, never a text EOF
+ *             token.
  *   Body    : "LINK L <target> <name> <hosttype> <host> <hsonametype>
  *             <hsoname> <version> <magic>" lines, each optionally followed
- *             by "LINK-INFO CACHED <aname> ASCII <value>" attribute lines.
- *             Fields use Prospero single-quote quoting ('' -> literal ').
- *             Zero matches is the line "NONE-FOUND" (success, not error).
+ *             by attribute lines: the v5 form "ATTRIBUTE <prec> <nature>
+ *             <aname> SEQUENCE <value>", or the v1 form "LINK-INFO CACHED
+ *             <aname> ASCII <value>", both parsed. Fields use Prospero
+ *             single-quote quoting ('' -> literal '). Zero matches is the
+ *             line "NONE-FOUND" (success, not error). A "WARNING" line is
+ *             kept for the UI, not treated as an error.
  *
  * Part of the Montreal Greek Times Unicorn Suite.
  * Copyright (C) 2026 Dimitri Papadopoulos and The Montreal Greek Times

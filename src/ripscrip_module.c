@@ -1354,6 +1354,13 @@ static void rip_register_classes(HINSTANCE hInst)
     if (!g_panel_class_reg) {
         ZeroMemory(&wc, sizeof wc);
         wc.cbSize        = sizeof wc;
+        /* The same pair the canvas got on 2026-08-04, for the same
+         * reason (2026-10-20, pre-release audit C1): the Connect and
+         * Disconnect buttons are anchored to the right edge, so every
+         * width change moves them, and without these the strip they
+         * vacate kept a stale fragment of the old button after an edge
+         * drag ("ct" beside Disconnect). */
+        wc.style         = CS_HREDRAW | CS_VREDRAW;
         wc.lpfnWndProc   = RipPanelProc;
         wc.hInstance     = hInst;
         wc.hCursor       = LoadCursorA(NULL, (LPCSTR)IDC_ARROW);
@@ -1412,6 +1419,10 @@ void ripscrip_module_resize(HWND content, int w, int h)
         int conn_x = disc_x - conn_gap - conn_w;
         MoveWindow(g_hConnBtn, conn_x, 12, conn_w, btn_h, TRUE);
         MoveWindow(g_hDiscBtn, disc_x, 12, disc_w, btn_h, TRUE);
+        /* Erase the whole strip and repaint every control in it, so no
+         * fragment of a button's previous position survives (audit C1). */
+        RedrawWindow(g_hPanel, NULL, NULL,
+                     RDW_INVALIDATE | RDW_ERASE | RDW_ALLCHILDREN);
     }
 
     canvas_y = 52;

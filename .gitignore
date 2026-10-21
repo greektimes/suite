@@ -141,6 +141,15 @@ MGT_Unicorn_Suite_x64.exe
 !/third_party/opennabuipl/
 !/third_party/opennabu/
 
+# Added 2026-10-20 for 0.7.0-beta, the GW-BASIC tab, same reasoning:
+#   libx86emu     the x86 core the interpreter runs on, MODIFIED, linked
+#                 into the Suite (MIT-style; LICENSE and MGT-CHANGES.md)
+#   moderndos     the Modern DOS fonts the screen tables are generated
+#                 from (CC0; LICENSE.txt)
+!/third_party/libx86emu/
+/third_party/libx86emu/*.o
+!/third_party/moderndos/
+
 # ------------------------------------------------------------------
 # Added 2026-08-02, MSI packaging. The WiX source and the build script
 # are tracked; what they GENERATE is not. installer/payload is a staged

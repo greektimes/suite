@@ -1,0 +1,17 @@
+# Build products of mgt_build.sh (upstream Makefile). The two .EXE images
+# are kept: they are what the Suite embeds, and they are byte-identical to
+# upstream release 20261005 (see MGT-BUILD.md).
+*.OBJ
+*.MAP
+*.TMP
+*.ERR
+MATH.ASM
+JWasm.build/
+JWlink.build/
+jwasm
+jwasm.exe
+jwlink
+jwlink.exe
+.mgt_ccwrap/
+!GWBASIC.EXE
+!GWBASICA.EXE

@@ -59,6 +59,12 @@ set CFLAGS_ZMODEM=-O2 -fstack-protector-strong -D_WIN32 -Isrc ^
 @REM docs\2026-08-05_NABU_NATIVE_PHASE1.md.
 set CFLAGS_NABU=-O2 -fstack-protector-strong -D_WIN32 -Isrc ^
     -Ithird_party\marduk
+@REM 2026-10-20 GW-BASIC tab: libx86emu (third_party\libx86emu, X11/BSD
+@REM style licence) runs Microsoft's GWBASICA.EXE, which is embedded as
+@REM RCDATA from firmware\gwbasic. The CPU's include path is confined to
+@REM the machine and the core, as Marduk's is.
+set CFLAGS_GWB=-O2 -fstack-protector-strong -D_WIN32 -Isrc ^
+    -Ithird_party\libx86emu\include
 @REM 2026-06-16 Radio engine dispatch: radio_engine.c uses the Microsoft
 @REM AAC Decoder MFT (IMFTransform IIDs live in mfuuid) plus WASAPI
 @REM (CLSID_MMDeviceEnumerator / IAudioClient, defined locally via
@@ -158,6 +164,21 @@ echo   nabu_native_module.c (the NABU Native tab's GDI renderer, uses CFLAGS_NAB
 %CC% %CFLAGS_NABU% -c -o src\nabu_native_module.o src\nabu_native_module.c
 if errorlevel 1 exit /b 1
 
+echo Compiling the vendored x86 core (libx86emu) for the GW-BASIC tab...
+for %%f in (api decode mem ops ops2 prim_ops) do (
+    echo   third_party\libx86emu\%%f.c
+    %CC% %CFLAGS_GWB% -c -o third_party\libx86emu\%%f.o third_party\libx86emu\%%f.c
+    if errorlevel 1 exit /b 1
+)
+
+echo   gwb_machine.c (the PC that runs GW-BASIC, uses CFLAGS_GWB)
+%CC% %CFLAGS_GWB% -c -o src\gwb_machine.o src\gwb_machine.c
+if errorlevel 1 exit /b 1
+
+echo   gwbasic_module.c (the GW-BASIC tab, uses CFLAGS_GWB)
+%CC% %CFLAGS_GWB% -c -o src\gwbasic_module.o src\gwbasic_module.c
+if errorlevel 1 exit /b 1
+
 echo   web_module.c (libwww-driven, uses CFLAGS_WEB)
 %CC% %CFLAGS_WEB% -c -o src\web_module.o src\web_module.c
 if errorlevel 1 exit /b 1
@@ -252,6 +273,10 @@ echo Linking %TARGET%...
     third_party\marduk\z80.o third_party\marduk\tms9918.o ^
     third_party\marduk\tms_util.o third_party\marduk\emu2149.o ^
     third_party\marduk\disk.o third_party\marduk\modem.o ^
+    src\gwb_machine.o src\gwbasic_module.o ^
+    third_party\libx86emu\api.o third_party\libx86emu\decode.o ^
+    third_party\libx86emu\mem.o third_party\libx86emu\ops.o ^
+    third_party\libx86emu\ops2.o third_party\libx86emu\prim_ops.o ^
     src\zmodem_recv.o ^
     third_party\mbzm\zserial.o third_party\mbzm\zheaders.o ^
     third_party\mbzm\znumbers.o ^
